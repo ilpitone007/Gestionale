@@ -1,0 +1,27 @@
+services:
+  # Servizio Backend Express API
+  backend:
+    build: ./server
+    container_name: pizzeria-backend
+    ports:
+      - "5001:5001"
+    environment:
+      - PORT=5001
+      - DB_PATH=/app/data/pizzeria_db.json
+      - JWT_SECRET=pizzeria_super_secret_key_2026
+    volumes:
+      # Volume per persistere i dati in modo che non vengano persi al riavvio dei container
+      - db-data:/app/data
+
+  # Servizio Frontend Nginx Web Server
+  frontend:
+    build: ./client
+    container_name: pizzeria-frontend
+    ports:
+      - "8090:80"
+    depends_on:
+      - backend
+
+# Definizione dei volumi persistenti
+volumes:
+  db-data:

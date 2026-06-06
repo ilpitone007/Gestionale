@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background-color: #F4F6FB;
+    color: #0B1F3A;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: #F4F6FB; }
+  ::-webkit-scrollbar-thumb { background: #E5E7EB; border-radius: 99px; }
+  ::-webkit-scrollbar-thumb:hover { background: #9CA3AF; }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary text-white font-semibold px-4 py-2.5 rounded-xl hover:bg-primary-hover active:scale-95 transition-all duration-150 flex items-center gap-2 text-sm;
+  }
+  .btn-secondary {
+    @apply bg-white text-text-primary font-semibold px-4 py-2.5 rounded-xl border border-border hover:bg-bg active:scale-95 transition-all duration-150 flex items-center gap-2 text-sm;
+  }
+  .btn-ghost {
+    @apply text-text-secondary font-medium px-3 py-2 rounded-lg hover:bg-bg active:scale-95 transition-all duration-150 flex items-center gap-2 text-sm;
+  }
+  .btn-danger {
+    @apply bg-danger text-white font-semibold px-4 py-2.5 rounded-xl hover:bg-red-700 active:scale-95 transition-all duration-150 flex items-center gap-2 text-sm;
+  }
+  .card {
+    @apply bg-surface rounded-2xl border border-border shadow-card p-6;
+  }
+  .input {
+    @apply w-full bg-bg border border-border rounded-xl px-3 py-2.5 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all;
+  }
+  .select {
+    @apply w-full bg-bg border border-border rounded-xl px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all;
+  }
+  .label {
+    @apply block text-xs font-semibold text-text-secondary uppercase tracking-wide mb-1.5;
+  }
+  .table-header {
+    @apply bg-bg text-text-secondary text-xs font-semibold uppercase tracking-wide px-4 py-3 text-left;
+  }
+  .table-cell {
+    @apply px-4 py-3.5 text-sm text-text-primary border-b border-border;
+  }
+  .sidebar-link {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-sidebar-hover transition-all duration-150 cursor-pointer;
+  }
+  .sidebar-link-active {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white bg-sidebar-active transition-all duration-150 cursor-pointer;
+  }
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  }
+  .page-title {
+    @apply text-2xl font-bold text-text-primary;
+  }
+  .page-subtitle {
+    @apply text-sm text-text-secondary mt-0.5;
+  }
+  .kanban-col {
+    @apply bg-bg rounded-2xl p-4 flex flex-col gap-3 min-h-[400px];
+  }
+  .kanban-card {
+    @apply bg-surface rounded-xl border border-border p-4 shadow-card hover:shadow-elevated transition-shadow cursor-pointer;
+  }
+}
