@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, Search, X, Clock, CheckCircle2, AlertTriangle, Menu } from 'lucide-react';
+import { Bell, X, Clock, CheckCircle2, AlertTriangle, Menu } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { getOrdini } from '@/api/ordini';
@@ -220,10 +220,7 @@ export default function Header({ onMenuToggle }: HeaderProps) {
         </div>
       </div>
       <div className="flex items-center gap-3">
-        <div className="hidden md:flex items-center gap-2 bg-bg border border-border rounded-xl px-3 py-2">
-          <Search size={15} className="text-text-muted" />
-          <span className="text-sm text-text-muted">Ricerca rapida...</span>
-        </div>
+
         <div className="text-right hidden lg:block">
           <div className="text-xs font-semibold text-text-primary">
             {ora.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
@@ -343,10 +340,7 @@ export default function Header({ onMenuToggle }: HeaderProps) {
           )}
         </div>
 
-        {/* Avatar */}
-        <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center text-sm font-bold">
-          {utente?.nome?.[0]}{utente?.cognome?.[0]}
-        </div>
+
       </div>
     </header>
   );
