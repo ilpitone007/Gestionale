@@ -293,20 +293,21 @@ export default function Cassa() {
               <div>
                 <label className="label"><User size={10} className="inline" /> Nome cliente <span className="text-text-muted font-normal">(opzionale)</span></label>
                 <input
+                  type="text"
                   className="input"
                   placeholder="Es. Mario Rossi"
                   value={nomeBanco}
-                  onChange={e => setNomeBanco(e.target.value)}
+                  onChange={e => setNomeBanco(e.target.value.replace(/[^a-zA-Z\s'-\u00C0-\u00FF]/g, ''))}
                 />
               </div>
               <div>
                 <label className="label"><Phone size={10} className="inline" /> Cellulare <span className="text-text-muted font-normal">(opzionale)</span></label>
                 <input
+                  type="number"
                   className="input"
-                  type="tel"
-                  placeholder="Es. 333 1234567"
+                  placeholder="Es. 3331234567"
                   value={telefonoBanco}
-                  onChange={e => setTelefonoBanco(e.target.value)}
+                  onChange={e => setTelefonoBanco(e.target.value.replace(/\D/g, ''))}
                 />
               </div>
             </div>

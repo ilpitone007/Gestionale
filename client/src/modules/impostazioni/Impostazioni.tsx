@@ -220,11 +220,11 @@ export default function Impostazioni() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div><label className="label">Nome locale</label>
-                <input className="input" value={settings.nomePizzeria} onChange={e => updateSettings({ nomePizzeria: e.target.value })} /></div>
+                <input type="text" className="input" value={settings.nomePizzeria} onChange={e => updateSettings({ nomePizzeria: e.target.value })} /></div>
               <div><label className="label">Partita IVA</label>
                 <input className="input" value={settings.piva} onChange={e => updateSettings({ piva: e.target.value })} /></div>
               <div><label className="label">Telefono</label>
-                <input className="input" value={settings.telefono} onChange={e => updateSettings({ telefono: e.target.value })} /></div>
+                <input type="number" className="input" value={settings.telefono} onChange={e => updateSettings({ telefono: e.target.value.replace(/\D/g, '') })} /></div>
               <div><label className="label">Email</label>
                 <input className="input" type="email" value={settings.email} onChange={e => updateSettings({ email: e.target.value })} /></div>
               <div className="md:col-span-2"><label className="label">Indirizzo</label>

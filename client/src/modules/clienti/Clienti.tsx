@@ -40,8 +40,15 @@ function ModalCliente({ cliente, onClose, onSaved }: ModalClienteProps) {
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Partial<FormCliente>>({});
 
-  const set = (k: keyof FormCliente) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-    setForm(prev => ({ ...prev, [k]: e.target.value }));
+  const set = (k: keyof FormCliente) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    let val = e.target.value;
+    if (k === 'nome' || k === 'cognome') {
+      val = val.replace(/[^a-zA-Z\s'-\u00C0-\u00FF]/g, '');
+    } else if (k === 'telefono') {
+      val = val.replace(/\D/g, '');
+    }
+    setForm(prev => ({ ...prev, [k]: val }));
+  };
 
   const valida = () => {
     const errs: Partial<FormCliente> = {};
@@ -99,6 +106,7 @@ function ModalCliente({ cliente, onClose, onSaved }: ModalClienteProps) {
             <div>
               <label className="label">Nome <span className="text-danger">*</span></label>
               <input
+                type="text"
                 className={clsx('input', errors.nome && 'border-danger')}
                 placeholder="Mario"
                 value={form.nome}
@@ -109,6 +117,7 @@ function ModalCliente({ cliente, onClose, onSaved }: ModalClienteProps) {
             <div>
               <label className="label">Cognome <span className="text-danger">*</span></label>
               <input
+                type="text"
                 className={clsx('input', errors.cognome && 'border-danger')}
                 placeholder="Rossi"
                 value={form.cognome}
@@ -124,9 +133,9 @@ function ModalCliente({ cliente, onClose, onSaved }: ModalClienteProps) {
               <Phone size={13} /> Telefono <span className="text-danger">*</span>
             </label>
             <input
+              type="number"
               className={clsx('input', errors.telefono && 'border-danger')}
-              type="tel"
-              placeholder="Es. 333 1234567"
+              placeholder="Es. 3331234567"
               value={form.telefono}
               onChange={set('telefono')}
             />
