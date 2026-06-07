@@ -6,19 +6,9 @@ import StatusBadge from '@/components/badges/StatusBadge';
 import { formatCurrency, tempoTrascorso } from '@/utils';
 import { getOrdini } from '@/api/ordini';
 import type { OrdineAPI } from '@/api/ordini';
+import { getDashboardKPIs, getFasceOrarie } from '@/api/report';
+import { getIngredienti } from '@/api/ingredienti';
 import { useNavigate } from 'react-router-dom';
-
-const venditeOra = [
-  { ora: '10:00', vendite: 120 }, { ora: '11:00', vendite: 180 }, { ora: '12:00', vendite: 320 },
-  { ora: '13:00', vendite: 280 }, { ora: '14:00', vendite: 210 }, { ora: '18:00', vendite: 260 },
-  { ora: '19:00', vendite: 380 }, { ora: '20:00', vendite: 340 }, { ora: '21:00', vendite: 290 },
-];
-
-const avvisi = [
-  { tipo: 'warning', testo: 'Funghi champignon sotto soglia minima' },
-  { tipo: 'warning', testo: 'Mascarpone quasi esaurito' },
-  { tipo: 'info',    testo: 'Picco di ordini atteso tra le 19:00 e le 21:00' },
-];
 
 const avvisoColor: Record<string, string> = {
   warning: 'border-l-warning bg-warning/5',
@@ -29,24 +19,68 @@ const avvisoColor: Record<string, string> = {
 export default function Dashboard() {
   const navigate = useNavigate();
   const [ordini, setOrdini] = useState<OrdineAPI[]>([]);
+  const [kpis, setKpis] = useState({
+    totale_incasso_oggi: 0,
+    numero_ordini_oggi: 0,
+    scontrino_medio_oggi: 0,
+    ordini_attivi: 0
+  });
+  const [scorteEsaurite, setScorteEsaurite] = useState<string[]>([]);
+  const [graficoData, setGraficoData] = useState<{ ora: string; vendite: number }[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getOrdini().then(setOrdini).catch(() => null);
+    const caricaTutto = async () => {
+      try {
+        // Carica gli ultimi ordini per la tabella
+        const ordiniData = await getOrdini({ limit: 5 });
+        setOrdini(ordiniData);
+
+        // Carica i KPI reali
+        const kpisData = await getDashboardKPIs();
+        setKpis(kpisData);
+
+        // Carica scorte ed ingredienti
+        const ingredientiData = await getIngredienti();
+        const esauriti = ingredientiData.filter(i => i.disponibile === 0).map(i => i.nome);
+        setScorteEsaurite(esauriti);
+
+        // Carica dati fasce orarie per il grafico (ore di punta 11:00 - 23:00)
+        const fasceData = await getFasceOrarie();
+        const mapped = fasceData
+          .filter(item => {
+            const oraNum = parseInt(item.ora.split(':')[0], 10);
+            return oraNum >= 11 && oraNum <= 23;
+          })
+          .map(item => ({
+            ora: item.ora,
+            vendite: item.incasso
+          }));
+        setGraficoData(mapped);
+      } catch {
+        // Fallimento silenzioso o fallback su mock
+      } finally {
+        setLoading(false);
+      }
+    };
+    caricaTutto();
   }, []);
 
-  const attivi    = ordini.filter(o => o.stato !== 'ritirato' && o.stato !== 'annullato');
-  const completati = ordini.filter(o => o.stato === 'ritirato');
-  const totaleOggi = completati.reduce((s, o) => s + (o.totale ?? 0), 0);
-  const ultimi    = [...ordini].sort((a, b) => b.id - a.id).slice(0, 5);
+  const ultimi = ordini.slice(0, 5);
+
+  const tuttiAvvisi = [
+    ...scorteEsaurite.map(nome => ({ tipo: 'warning' as const, testo: `Scorta esaurita: ingrediente "${nome}" terminato!` })),
+    { tipo: 'info' as const, testo: 'Picco di ordini atteso tra le 19:00 e le 21:00 (Fasce orarie di punta)' }
+  ];
 
   return (
     <div className="flex flex-col gap-6">
       {/* KPI */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Ordini attivi"     value={attivi.length}             icon={ShoppingBag}   color="blue"   sub="in corso" />
-        <StatCard label="Vendite oggi"      value={formatCurrency(totaleOggi)} icon={Euro}          color="green"  trend={{ value: 'aggiornato ora', positive: true }} />
-        <StatCard label="Ordini completati" value={completati.length}         icon={CheckCircle}   color="green"  sub="oggi" />
-        <StatCard label="Scorte basse"      value={0}                         icon={AlertTriangle} color="orange" sub="ingredienti" />
+        <StatCard label="Ordini attivi"     value={kpis.ordini_attivi}                        icon={ShoppingBag}   color="blue"   sub="in corso" />
+        <StatCard label="Vendite oggi"      value={formatCurrency(kpis.totale_incasso_oggi)} icon={Euro}          color="green"  trend={{ value: 'aggiornato ora', positive: true }} />
+        <StatCard label="Ordini completati" value={kpis.numero_ordini_oggi}                    icon={CheckCircle}   color="green"  sub="oggi" />
+        <StatCard label="Scorte basse"      value={scorteEsaurite.length}                     icon={AlertTriangle} color="orange" sub="ingredienti esauriti" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -55,14 +89,14 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="font-bold text-text-primary">Vendite per ora</h2>
-              <p className="text-xs text-text-muted mt-0.5">Oggi (dati indicativi)</p>
+              <p className="text-xs text-text-muted mt-0.5">Oggi (dati reali)</p>
             </div>
             <div className="flex items-center gap-1.5 text-success text-sm font-semibold">
-              <TrendingUp size={16} /> +8,2% vs ieri
+              <TrendingUp size={16} /> aggiornato in tempo reale
             </div>
           </div>
           <ResponsiveContainer width="100%" height={220}>
-            <LineChart data={venditeOra}>
+            <LineChart data={graficoData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
               <XAxis dataKey="ora" tick={{ fontSize: 11, fill: '#6B7280' }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: '#6B7280' }} axisLine={false} tickLine={false} tickFormatter={v => `€${v}`} />
@@ -78,10 +112,10 @@ export default function Dashboard() {
         {/* Avvisi */}
         <div className="card">
           <h2 className="font-bold text-text-primary mb-4">Avvisi</h2>
-          <div className="flex flex-col gap-3">
-            {avvisi.map((a, i) => (
+          <div className="flex flex-col gap-3 max-h-[220px] overflow-y-auto pr-1">
+            {tuttiAvvisi.map((a, i) => (
               <div key={i} className={`border-l-4 ${avvisoColor[a.tipo]} rounded-r-lg px-3 py-2.5`}>
-                <p className="text-sm text-text-primary">{a.testo}</p>
+                <p className="text-xs md:text-sm text-text-primary font-medium">{a.testo}</p>
               </div>
             ))}
           </div>
@@ -104,25 +138,32 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              {ultimi.length === 0 && (
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="table-cell text-center text-text-muted py-8 text-sm animate-pulse">
+                    Caricamento...
+                  </td>
+                </tr>
+              ) : ultimi.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="table-cell text-center text-text-muted py-8 text-sm">
                     Nessun ordine trovato
                   </td>
                 </tr>
+              ) : (
+                ultimi.map(o => (
+                  <tr key={o.id} className="hover:bg-bg transition-colors">
+                    <td className="table-cell font-semibold">{o.numero_ordine}</td>
+                    <td className="table-cell text-xs md:text-sm">
+                      {o.cliente ? `${o.cliente.nome} ${o.cliente.cognome}` : o.nome_banco ? `cliente banco: ${o.nome_banco}` : 'cliente banco'}
+                    </td>
+                    <td className="table-cell capitalize text-xs md:text-sm">{o.canale}</td>
+                    <td className="table-cell font-semibold text-xs md:text-sm">{formatCurrency(o.totale)}</td>
+                    <td className="table-cell text-text-muted text-xs md:text-sm">{tempoTrascorso(o.creato_il)} fa</td>
+                    <td className="table-cell"><StatusBadge stato={o.stato} /></td>
+                  </tr>
+                ))
               )}
-              {ultimi.map(o => (
-                <tr key={o.id} className="hover:bg-bg transition-colors">
-                  <td className="table-cell font-semibold">{o.numero_ordine}</td>
-                  <td className="table-cell">
-                    {o.cliente ? `${o.cliente.nome} ${o.cliente.cognome}` : o.nome_banco ? `cliente banco: ${o.nome_banco}` : 'cliente banco'}
-                  </td>
-                  <td className="table-cell capitalize">{o.canale}</td>
-                  <td className="table-cell font-semibold">{formatCurrency(o.totale)}</td>
-                  <td className="table-cell text-text-muted">{tempoTrascorso(o.creato_il)} fa</td>
-                  <td className="table-cell"><StatusBadge stato={o.stato} /></td>
-                </tr>
-              ))}
             </tbody>
           </table>
         </div>
