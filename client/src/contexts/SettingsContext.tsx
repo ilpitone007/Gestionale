@@ -47,6 +47,16 @@ export interface Settings {
 
   // 🧾 Stampa
   footerScontrino: string;
+
+  // 🔔 Notifiche & Anti-Spam
+  notificheAbilitate: boolean;
+  notificaSoloNuovi: boolean;
+  notificaEscludiBanco: boolean;
+  notificaSoloCanali: string[];
+  suonoNotificaAbilitato: boolean;
+  suonoSoloOnline: boolean;
+  suonoCooldown: number;
+  suonoVolume: number;
 }
 
 const GIORNI = ['lunedi', 'martedi', 'mercoledi', 'giovedi', 'venerdi', 'sabato', 'domenica'];
@@ -78,6 +88,14 @@ export const DEFAULT_SETTINGS: Settings = {
   ipStampante: '192.168.1.100',
   modalitaDemo: false,
   footerScontrino: 'Grazie per aver scelto la nostra pizzeria! 🍕',
+  notificheAbilitate: true,
+  notificaSoloNuovi: true,
+  notificaEscludiBanco: true,
+  notificaSoloCanali: ['online', 'telefono'],
+  suonoNotificaAbilitato: true,
+  suonoSoloOnline: false,
+  suonoCooldown: 10,
+  suonoVolume: 0.3,
   mostraModuli: {
     clienti: true,
     consegne: true,

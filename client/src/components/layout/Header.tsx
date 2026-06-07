@@ -1,10 +1,52 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, Search, X, Clock, CheckCircle2, AlertTriangle, Menu } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { getOrdini } from '@/api/ordini';
 import type { OrdineAPI } from '@/api/ordini';
 import { tempoTrascorso } from '@/utils';
 import { clsx } from 'clsx';
+
+// Riproduzione acustica di notifica tramite Web Audio API
+export function playChime(volume = 0.3) {
+  try {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const ctx = new AudioContextClass();
+    
+    // Primo bip
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(587.33, ctx.currentTime); // RE5
+    gain1.gain.setValueAtTime(0, ctx.currentTime);
+    gain1.gain.linearRampToValueAtTime(volume * 0.5, ctx.currentTime + 0.04);
+    gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.22);
+    
+    osc1.start(ctx.currentTime);
+    osc1.stop(ctx.currentTime + 0.25);
+    
+    // Secondo bip
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(880.00, ctx.currentTime + 0.12); // LA5
+    gain2.gain.setValueAtTime(0, ctx.currentTime + 0.12);
+    gain2.gain.linearRampToValueAtTime(volume * 0.5, ctx.currentTime + 0.16);
+    gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.38);
+    
+    osc2.start(ctx.currentTime + 0.12);
+    osc2.stop(ctx.currentTime + 0.40);
+  } catch (e) {
+    // Silenzioso in caso di blocco autoplay del browser
+  }
+}
 
 const pageTitles: Record<string, { title: string; subtitle: string }> = {
   '/dashboard':    { title: 'Dashboard',         subtitle: 'Panoramica generale del locale' },
@@ -42,12 +84,18 @@ interface HeaderProps {
 
 export default function Header({ onMenuToggle }: HeaderProps) {
   const { utente } = useAuth();
+  const { settings } = useSettings();
   const [ora, setOra] = useState(new Date());
   const [aperto, setAperto] = useState(false);
   const [ordini, setOrdini] = useState<OrdineAPI[]>([]);
   const [letti, setLetti] = useState<Set<number>>(new Set());
   const [cancellate, setCancellate] = useState<Set<number>>(new Set());
   const panelRef = useRef<HTMLDivElement>(null);
+
+  // Riferimenti anti-spam notifiche
+  const prevOrdiniIds = useRef<Set<number>>(new Set());
+  const ultimoSuonoRef = useRef<number>(0);
+  const isFirstLoad = useRef(true);
 
   const path = Object.keys(pageTitles).find(k => window.location.pathname.startsWith(k)) ?? '/dashboard';
   const { title, subtitle } = pageTitles[path];
@@ -63,13 +111,51 @@ export default function Header({ onMenuToggle }: HeaderProps) {
     const carica = async () => {
       try {
         const data = await getOrdini({ limit: 15 });
+
+        // Calcola nuovi ordini per l'alert acustico rispetto a quelli memorizzati
+        const nuoviOrdini = data.filter(o => {
+          if (prevOrdiniIds.current.has(o.id)) return false;
+
+          // Filtri anti-spam a livello di suono
+          if (!settings.notificheAbilitate) return false;
+          if (settings.notificaSoloNuovi && o.stato !== 'ricevuto') return false;
+          if (!['ricevuto', 'in_preparazione', 'pronto'].includes(o.stato)) return false;
+          if (settings.notificaEscludiBanco && o.canale === 'banco') return false;
+          if (settings.notificaSoloCanali && !settings.notificaSoloCanali.includes(o.canale)) return false;
+
+          return true;
+        });
+
+        // Riproduci il suono solo se NON è il primo caricamento e sono presenti nuovi elementi
+        if (!isFirstLoad.current && nuoviOrdini.length > 0 && settings.suonoNotificaAbilitato) {
+          const oraCorrente = Date.now();
+          const cooldownMs = (settings.suonoCooldown ?? 10) * 1000;
+
+          const deveSuonare = nuoviOrdini.some(o => {
+            if (settings.suonoSoloOnline && o.canale !== 'online') return false;
+            return true;
+          });
+
+          if (deveSuonare && (oraCorrente - ultimoSuonoRef.current >= cooldownMs)) {
+            playChime(settings.suonoVolume ?? 0.3);
+            ultimoSuonoRef.current = oraCorrente;
+          }
+        }
+
+        // Memorizza tutti gli ID visti
+        data.forEach(o => prevOrdiniIds.current.add(o.id));
+
+        if (isFirstLoad.current) {
+          isFirstLoad.current = false;
+        }
+
         setOrdini(data);
       } catch { /* silenzioso */ }
     };
     carica();
     const interval = setInterval(carica, 30_000);
     return () => clearInterval(interval);
-  }, []);
+  }, [settings]);
 
   // Chiudi cliccando fuori
   useEffect(() => {
@@ -83,7 +169,17 @@ export default function Header({ onMenuToggle }: HeaderProps) {
     return () => document.removeEventListener('mousedown', handler);
   }, [aperto]);
 
-  const nonLetti = ordini.filter(o => !letti.has(o.id) && !cancellate.has(o.id) && ['ricevuto', 'in_preparazione', 'pronto'].includes(o.stato));
+  // Filtra notifiche in base alle impostazioni anti-spam
+  const notificheFiltrate = ordini.filter(o => {
+    if (!settings.notificheAbilitate) return false;
+    if (settings.notificaSoloNuovi && o.stato !== 'ricevuto') return false;
+    if (!['ricevuto', 'in_preparazione', 'pronto'].includes(o.stato)) return false;
+    if (settings.notificaEscludiBanco && o.canale === 'banco') return false;
+    if (settings.notificaSoloCanali && !settings.notificaSoloCanali.includes(o.canale)) return false;
+    return true;
+  });
+
+  const nonLetti = notificheFiltrate.filter(o => !letti.has(o.id) && !cancellate.has(o.id));
 
   const dismissSingola = (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -101,10 +197,10 @@ export default function Header({ onMenuToggle }: HeaderProps) {
   const apriPanel = () => {
     setAperto(p => !p);
     // Segna tutti come letti quando apre
-    if (!aperto) setLetti(new Set(ordini.map(o => o.id)));
+    if (!aperto) setLetti(new Set(notificheFiltrate.map(o => o.id)));
   };
 
-  const ordiniVisibili = ordini.filter(o => !cancellate.has(o.id));
+  const ordiniVisibili = notificheFiltrate.filter(o => !cancellate.has(o.id));
 
   return (
     <header className="sticky top-0 z-30 bg-surface border-b border-border px-4 md:px-6 py-3 flex items-center justify-between">

@@ -11,6 +11,7 @@ import { clsx } from 'clsx';
 import CouponManagement from '@/components/impostazioni/CouponManagement';
 import { getLogs, clearLogs, Log } from '@/api/logs';
 import { formatDate } from '@/utils';
+import { playChime } from '@/components/layout/Header';
 
 const GIORNI_LABEL: Record<string, string> = {
   lunedi: 'Lunedì', martedi: 'Martedì', mercoledi: 'Mercoledì',
@@ -22,6 +23,7 @@ const sezioni = [
   { id: 'orari',     label: 'Orari',         icon: Clock },
   { id: 'cassa',     label: 'Cassa',         icon: ShoppingCart },
   { id: 'cucina',    label: 'Cucina',        icon: ChefHat },
+  { id: 'notifiche', label: 'Notifiche',     icon: Bell },
   { id: 'consegne',  label: 'Consegne',      icon: Truck },
   { id: 'business',  label: 'Business',      icon: BarChart3 },
   { id: 'coupon',    label: 'Codici Sconto', icon: Tag },
@@ -349,6 +351,133 @@ export default function Impostazioni() {
                 desc="Suona quando un nuovo ordine arriva in cucina"
                 value={settings.alertSonoroCucina}
                 onChange={v => updateSettings({ alertSonoroCucina: v })} />
+            </div>
+          </div>
+        )}
+
+        {/* ── NOTIFICHE ── */}
+        {sezione === 'notifiche' && (
+          <div className="card p-6 flex flex-col gap-5">
+            <div>
+              <h2 className="font-bold text-text-primary mb-1 flex items-center gap-2"><Bell size={18} /> Notifiche & Anti-Spam</h2>
+              <p className="text-sm text-text-muted">Configura come e quando ricevere avvisi visivi e acustici per gli ordini.</p>
+            </div>
+
+            <div className="border-t border-border pt-4">
+              <h3 className="text-xs font-bold text-text-secondary uppercase tracking-wider mb-3">Impostazioni Visive</h3>
+              <Toggle
+                label="Abilita Notifiche Generali"
+                desc="Mostra il badge del contatore e la lista degli ordini nell'intestazione"
+                value={settings.notificheAbilitate}
+                onChange={v => updateSettings({ notificheAbilitate: v })}
+              />
+              {settings.notificheAbilitate && (
+                <>
+                  <Toggle
+                    label="Solo Nuovi Ordini (Ricevuti)"
+                    desc="Mostra notifiche solo per ordini nello stato iniziale, ignorando cambi di stato successivi"
+                    value={settings.notificaSoloNuovi}
+                    onChange={v => updateSettings({ notificaSoloNuovi: v })}
+                  />
+                  <Toggle
+                    label="Escludi Ordini al Banco"
+                    desc="Non inviare notifiche per ordini creati direttamente sul posto al banco"
+                    value={settings.notificaEscludiBanco}
+                    onChange={v => updateSettings({ notificaEscludiBanco: v })}
+                  />
+                  
+                  {/* Selettore Canali Abilitati */}
+                  <div className="py-3 border-b border-border">
+                    <label className="label">Canali che generano notifiche</label>
+                    <div className="flex gap-4 mt-2 flex-wrap">
+                      {[
+                        { key: 'online', label: '🌐 Online' },
+                        { key: 'telefono', label: '📞 Telefono' },
+                        { key: 'banco', label: '🪑 Banco' },
+                      ].map(ch => {
+                        const inList = settings.notificaSoloCanali?.includes(ch.key) ?? false;
+                        return (
+                          <label key={ch.key} className="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={inList}
+                              className="rounded border-border text-primary focus:ring-primary/20 w-4 h-4"
+                              onChange={e => {
+                                const next = e.target.checked
+                                  ? [...(settings.notificaSoloCanali ?? []), ch.key]
+                                  : (settings.notificaSoloCanali ?? []).filter(k => k !== ch.key);
+                                updateSettings({ notificaSoloCanali: next });
+                              }}
+                            />
+                            {ch.label}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="border-t border-border pt-4">
+              <h3 className="text-xs font-bold text-text-secondary uppercase tracking-wider mb-3">Impostazioni Audio</h3>
+              <Toggle
+                label="Abilita Avviso Sonoro (Chime)"
+                desc="Riproduce una melodia quando arriva una nuova notifica filtrata"
+                value={settings.suonoNotificaAbilitato}
+                onChange={v => updateSettings({ suonoNotificaAbilitato: v })}
+              />
+              
+              {settings.suonoNotificaAbilitato && (
+                <div className="flex flex-col gap-4 mt-3">
+                  <Toggle
+                    label="Suono solo per Ordini Online"
+                    desc="Riproduce l'alert sonoro solo per gli ordini web esterni, riducendo lo spam acustico"
+                    value={settings.suonoSoloOnline}
+                    onChange={v => updateSettings({ suonoSoloOnline: v })}
+                  />
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-2">
+                    <div>
+                      <label className="label">Volume Chime</label>
+                      <div className="flex items-center gap-2 mt-1">
+                        <select
+                          className="select w-32"
+                          value={settings.suonoVolume}
+                          onChange={e => updateSettings({ suonoVolume: Number(e.target.value) })}
+                        >
+                          <option value={0.1}>Basso (10%)</option>
+                          <option value={0.3}>Medio (30%)</option>
+                          <option value={0.5}>Alto (50%)</option>
+                          <option value={0.8}>Massimo (80%)</option>
+                        </select>
+                        <button
+                          onClick={() => playChime(settings.suonoVolume)}
+                          className="btn-secondary text-xs py-2 px-3"
+                          title="Ascolta un'anteprima del suono"
+                        >
+                          🔊 Test Suono
+                        </button>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="label">Ritardo Cooldown Sonoro</label>
+                      <select
+                        className="select w-48 mt-1"
+                        value={settings.suonoCooldown}
+                        onChange={e => updateSettings({ suonoCooldown: Number(e.target.value) })}
+                      >
+                        <option value={0}>Nessuno (suona sempre)</option>
+                        <option value={5}>5 secondi</option>
+                        <option value={10}>10 secondi (Consigliato)</option>
+                        <option value={30}>30 secondi</option>
+                        <option value={60}>1 minuto</option>
+                      </select>
+                      <p className="text-[10px] text-text-muted mt-1">Tempo minimo di silenzio tra due chime acustici consecutivi</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
