@@ -4,13 +4,27 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../db/database');
 const authMiddleware = require('../middleware/auth');
+const jwtSecret = require('../utils/jwtSecret');
+
+const { creaRateLimiter } = require('../middleware/rateLimiter');
+
+const loginLimiter = creaRateLimiter({
+  finestraMs: 5 * 60 * 1000, // 5 minuti
+  limiteMax: 10,
+  messaggio: 'Troppi tentativi di login da questo IP. Riprova tra 5 minuti.'
+});
 
 // POST /api/auth/login
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimiter, async (req, res) => {
   const { username, password } = req.body;
 
   if (!username || !password) {
     return res.status(400).json({ errore: 'Username e password sono richiesti.' });
+  }
+
+  // Previene crash (TypeError) se vengono passati tipi diversi da stringa (es. array o oggetti)
+  if (typeof username !== 'string' || typeof password !== 'string') {
+    return res.status(400).json({ errore: 'Username e password devono essere stringhe valide.' });
   }
 
   try {
@@ -28,10 +42,9 @@ router.post('/login', async (req, res) => {
     }
 
     // Genera il token JWT
-    const secret = process.env.JWT_SECRET || 'pizzeria_super_secret_key_2026';
     const token = jwt.sign(
       { id: utente.id, username: utente.username, ruolo: utente.ruolo },
-      secret,
+      jwtSecret,
       { expiresIn: '12h' } // Il token scade dopo 12 ore (turno di lavoro)
     );
 

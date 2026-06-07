@@ -27,8 +27,16 @@ router.delete('/', authMiddleware, permettiRuoli('titolare', 'responsabile'), (r
   }
 });
 
+const { creaRateLimiter } = require('../middleware/rateLimiter');
+
+const logPostLimiter = creaRateLimiter({
+  finestraMs: 60 * 1000, // 1 minuto
+  limiteMax: 5,
+  messaggio: 'Spam di log rilevato da questo IP. Invio log sospeso temporaneamente.'
+});
+
 // POST /api/logs - Aggiungi un log dal client
-router.post('/', (req, res) => {
+router.post('/', logPostLimiter, (req, res) => {
   const { messaggio, stack, tipo, url, metodo } = req.body;
   try {
     const nuovoLog = db.insert('logs', {

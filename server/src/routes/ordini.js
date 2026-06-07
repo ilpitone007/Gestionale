@@ -103,6 +103,27 @@ router.post('/', authMiddleware, (req, res) => {
     return res.status(400).json({ errore: 'Canale, metodo di pagamento e prodotti sono obbligatori.' });
   }
 
+  // Validazione tipi di dato
+  if (typeof canale !== 'string' || typeof metodo_pagamento !== 'string') {
+    return res.status(400).json({ errore: 'Canale e metodo di pagamento devono essere stringhe valide.' });
+  }
+
+  if (sconto !== undefined && (typeof sconto !== 'number' || sconto < 0 || isNaN(sconto))) {
+    return res.status(400).json({ errore: 'Lo sconto deve essere un numero positivo.' });
+  }
+
+  if (nome_banco !== undefined && nome_banco !== null && typeof nome_banco !== 'string') {
+    return res.status(400).json({ errore: 'Il nome del cliente al banco deve essere una stringa.' });
+  }
+
+  if (telefono_banco !== undefined && telefono_banco !== null && typeof telefono_banco !== 'string') {
+    return res.status(400).json({ errore: 'Il telefono del cliente al banco deve essere una stringa.' });
+  }
+
+  if (nota !== undefined && nota !== null && typeof nota !== 'string') {
+    return res.status(400).json({ errore: 'La nota deve essere una stringa.' });
+  }
+
   // Genera numero ordine
   const numero_ordine = generaNumeroOrdine();
   let totale = 0;
@@ -113,6 +134,15 @@ router.post('/', authMiddleware, (req, res) => {
   const prodotti = db.getAll('prodotti');
 
   for (const riga of righe) {
+    // Validazione riga
+    if (!riga || typeof riga.prodotto_id !== 'number' || typeof riga.quantita !== 'number' || riga.quantita <= 0 || !Number.isInteger(riga.quantita)) {
+      return res.status(400).json({ errore: 'Ciascun prodotto deve avere un ID valido e una quantità intera positiva.' });
+    }
+
+    if (riga.quantita > 100) {
+      return res.status(400).json({ errore: 'La quantità massima consentita per singolo prodotto è 100.' });
+    }
+
     const prodotto = prodotti.find(p => p.id === riga.prodotto_id);
     if (!prodotto) {
       return res.status(400).json({ errore: `Prodotto con ID ${riga.prodotto_id} non esistente.` });
@@ -361,11 +391,45 @@ router.put('/:id', authMiddleware, (req, res) => {
     return res.status(400).json({ errore: 'Le righe ordine sono obbligatorie.' });
   }
 
+  // Validazioni tipi di dato
+  if (canale !== undefined && typeof canale !== 'string') {
+    return res.status(400).json({ errore: 'Il canale deve essere una stringa.' });
+  }
+
+  if (metodo_pagamento !== undefined && typeof metodo_pagamento !== 'string') {
+    return res.status(400).json({ errore: 'Il metodo di pagamento deve essere una stringa.' });
+  }
+
+  if (sconto !== undefined && (typeof sconto !== 'number' || sconto < 0 || isNaN(sconto))) {
+    return res.status(400).json({ errore: 'Lo sconto deve essere un numero positivo.' });
+  }
+
+  if (nome_banco !== undefined && nome_banco !== null && typeof nome_banco !== 'string') {
+    return res.status(400).json({ errore: 'Il nome del cliente al banco deve essere una stringa.' });
+  }
+
+  if (telefono_banco !== undefined && telefono_banco !== null && typeof telefono_banco !== 'string') {
+    return res.status(400).json({ errore: 'Il telefono del cliente al banco deve essere una stringa.' });
+  }
+
+  if (nota !== undefined && nota !== null && typeof nota !== 'string') {
+    return res.status(400).json({ errore: 'La nota deve essere una stringa.' });
+  }
+
   const prodotti = db.getAll('prodotti');
   let totale = 0;
   const righeDaInserire = [];
 
   for (const riga of righe) {
+    // Validazione riga
+    if (!riga || typeof riga.prodotto_id !== 'number' || typeof riga.quantita !== 'number' || riga.quantita <= 0 || !Number.isInteger(riga.quantita)) {
+      return res.status(400).json({ errore: 'Ciascun prodotto deve avere un ID valido e una quantità intera positiva.' });
+    }
+
+    if (riga.quantita > 100) {
+      return res.status(400).json({ errore: 'La quantità massima consentita per singolo prodotto è 100.' });
+    }
+
     const prodotto = prodotti.find(p => p.id === riga.prodotto_id);
     if (!prodotto) {
       return res.status(400).json({ errore: `Prodotto ID ${riga.prodotto_id} non trovato.` });

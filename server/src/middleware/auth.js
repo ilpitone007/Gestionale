@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const jwtSecret = require('../utils/jwtSecret');
 
 function authMiddleware(req, res, next) {
   // Recupera il token dall'header Authorization
@@ -10,9 +11,8 @@ function authMiddleware(req, res, next) {
   }
 
   try {
-    // Verifica il token utilizzando la chiave segreta (in produzione definita in .env)
-    const secret = process.env.JWT_SECRET || 'pizzeria_super_secret_key_2026';
-    const utenteDecodificato = jwt.verify(token, secret);
+    // Verifica il token utilizzando la chiave segreta condivisa
+    const utenteDecodificato = jwt.verify(token, jwtSecret);
     
     // Allega le info dell'utente alla richiesta
     req.utente = utenteDecodificato;
