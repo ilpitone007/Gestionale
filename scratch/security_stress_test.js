@@ -101,7 +101,10 @@ async function runSecurityTests() {
     for (let i = 1; i <= 10; i++) {
       const res = await fetch(`${API_URL}/logs`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${tokenDipendente}`
+        },
         body: JSON.stringify({ messaggio: 'Test log spam', tipo: 'INFO' })
       });
       if (res.status === 429) {
@@ -221,7 +224,16 @@ async function runSecurityTests() {
     });
     const ordine = await resCrea.json();
 
-    // Lo avanziamo a pronto
+    // Lo avanziamo a in_preparazione poi a pronto (rispettando la macchina a stati)
+    await fetch(`${API_URL}/ordini/${ordine.id}/stato`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${tokenDipendente}`
+      },
+      body: JSON.stringify({ stato: 'in_preparazione' })
+    });
+
     await fetch(`${API_URL}/ordini/${ordine.id}/stato`, {
       method: 'PUT',
       headers: {

@@ -10,12 +10,18 @@ router.use(authMiddleware);
 router.use(permettiRuoli('titolare'));
 
 // GET /api/utenti - Lista dipendenti
-router.get('/', (req, res) => {
-  const utenti = db.getAll('utenti').map(u => {
-    const { password_hash, ...resto } = u;
-    return resto;
-  });
-  res.json(utenti);
+router.get('/', async (req, res) => {
+  try {
+    const list = await db.getAll('utenti');
+    const utenti = list.map(u => {
+      const { password_hash, ...resto } = u;
+      return resto;
+    });
+    res.json(utenti);
+  } catch (err) {
+    console.error('Errore lettura utenti:', err);
+    res.status(500).json({ errore: 'Errore interno del server.' });
+  }
 });
 
 // POST /api/utenti - Aggiungi dipendente
@@ -28,7 +34,7 @@ router.post('/', async (req, res) => {
 
   try {
     // Verifica se l'username esiste già
-    const usernameEsistente = db.findOne('utenti', u => u.username === username.toLowerCase());
+    const usernameEsistente = await db.findOne('utenti', u => u.username === username.toLowerCase());
     if (usernameEsistente) {
       return res.status(400).json({ errore: 'Questo username è già registrato.' });
     }
@@ -37,7 +43,7 @@ router.post('/', async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const password_hash = await bcrypt.hash(password, salt);
 
-    const nuovoUtente = db.insert('utenti', {
+    const nuovoUtente = await db.insert('utenti', {
       username: username.toLowerCase(),
       password_hash,
       nome,
@@ -60,12 +66,12 @@ router.put('/:id', async (req, res) => {
   const { id } = req.params;
   const { password, nome, cognome, ruolo, attivo } = req.body;
 
-  const utenteEsistente = db.getById('utenti', id);
-  if (!utenteEsistente) {
-    return res.status(404).json({ errore: 'Dipendente non trovato.' });
-  }
-
   try {
+    const utenteEsistente = await db.getById('utenti', id);
+    if (!utenteEsistente) {
+      return res.status(404).json({ errore: 'Dipendente non trovato.' });
+    }
+
     const datiAggiornati = {};
     if (nome !== undefined) datiAggiornati.nome = nome;
     if (cognome !== undefined) datiAggiornati.cognome = cognome;
@@ -77,7 +83,7 @@ router.put('/:id', async (req, res) => {
       datiAggiornati.password_hash = await bcrypt.hash(password, salt);
     }
 
-    const utenteAggiornato = db.update('utenti', id, datiAggiornati);
+    const utenteAggiornato = await db.update('utenti', id, datiAggiornati);
     const { password_hash: ph, ...resto } = utenteAggiornato;
     res.json(resto);
   } catch (err) {
@@ -87,29 +93,34 @@ router.put('/:id', async (req, res) => {
 });
 
 // DELETE /api/utenti/:id - Elimina o disattiva dipendente
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
   const { id } = req.params;
 
   if (Number(id) === req.utente.id) {
     return res.status(400).json({ errore: 'Non puoi eliminare il tuo stesso account.' });
   }
 
-  const utente = db.getById('utenti', id);
-  if (!utente) {
-    return res.status(404).json({ errore: 'Dipendente non trovato.' });
-  }
-
-  // Per sicurezza, se è l'ultimo titolare, impediamo di eliminarlo
-  if (utente.ruolo === 'titolare') {
-    const titolari = db.find('utenti', u => u.ruolo === 'titolare' && u.attivo === 1);
-    if (titolari.length <= 1) {
-      return res.status(400).json({ errore: 'Impossibile disattivare l\'unico titolare attivo.' });
+  try {
+    const utente = await db.getById('utenti', id);
+    if (!utente) {
+      return res.status(404).json({ errore: 'Dipendente non trovato.' });
     }
-  }
 
-  // Invece di cancellarlo definitivamente (il che romperebbe l'integrità referenziale degli ordini passati), impostiamo attivo = 0
-  db.update('utenti', id, { attivo: 0 });
-  res.json({ messaggio: 'Dipendente disattivato correttamente.' });
+    // Per sicurezza, se è l'ultimo titolare, impediamo di eliminarlo
+    if (utente.ruolo === 'titolare') {
+      const titolari = await db.find('utenti', u => u.ruolo === 'titolare' && u.attivo === 1);
+      if (titolari.length <= 1) {
+        return res.status(400).json({ errore: 'Impossibile disattivare l\'unico titolare attivo.' });
+      }
+    }
+
+    // Invece di cancellarlo definitivamente (il che romperebbe l'integrità referenziale degli ordini passati), impostiamo attivo = 0
+    await db.update('utenti', id, { attivo: 0 });
+    res.json({ messaggio: 'Dipendente disattivato correttamente.' });
+  } catch (err) {
+    console.error('Errore eliminazione utente:', err);
+    res.status(500).json({ errore: 'Errore durante la disattivazione del dipendente.' });
+  }
 });
 
 module.exports = router;

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Bell, X, Clock, CheckCircle2, AlertTriangle, Menu } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSettings } from '@/contexts/SettingsContext';
-import { getOrdini } from '@/api/ordini';
+import { useOrders } from '@/contexts/OrdersContext';
 import type { OrdineAPI } from '@/api/ordini';
 import { tempoTrascorso } from '@/utils';
 import { clsx } from 'clsx';
@@ -85,9 +85,9 @@ interface HeaderProps {
 export default function Header({ onMenuToggle }: HeaderProps) {
   const { utente } = useAuth();
   const { settings } = useSettings();
+  const { ordini } = useOrders();
   const [ora, setOra] = useState(new Date());
   const [aperto, setAperto] = useState(false);
-  const [ordini, setOrdini] = useState<OrdineAPI[]>([]);
   const [letti, setLetti] = useState<Set<number>>(new Set());
   const [cancellate, setCancellate] = useState<Set<number>>(new Set());
   const panelRef = useRef<HTMLDivElement>(null);
@@ -106,56 +106,47 @@ export default function Header({ onMenuToggle }: HeaderProps) {
     return () => clearInterval(t);
   }, []);
 
-  // Carica ultimi ordini come notifiche
+  // Notifiche & Audio alert reattivi al cambio di `ordini`
   useEffect(() => {
-    const carica = async () => {
-      try {
-        const data = await getOrdini({ limit: 15 });
+    if (!ordini || ordini.length === 0) return;
 
-        // Calcola nuovi ordini per l'alert acustico rispetto a quelli memorizzati
-        const nuoviOrdini = data.filter(o => {
-          if (prevOrdiniIds.current.has(o.id)) return false;
+    // Calcola nuovi ordini per l'alert acustico rispetto a quelli memorizzati
+    const nuoviOrdini = ordini.filter(o => {
+      if (prevOrdiniIds.current.has(o.id)) return false;
 
-          // Filtri anti-spam a livello di suono
-          if (!settings.notificheAbilitate) return false;
-          if (settings.notificaSoloNuovi && o.stato !== 'ricevuto') return false;
-          if (!['ricevuto', 'in_preparazione', 'pronto'].includes(o.stato)) return false;
-          if (settings.notificaEscludiBanco && o.canale === 'banco') return false;
-          if (settings.notificaSoloCanali && !settings.notificaSoloCanali.includes(o.canale)) return false;
+      // Filtri anti-spam a livello di suono
+      if (!settings.notificheAbilitate) return false;
+      if (settings.notificaSoloNuovi && o.stato !== 'ricevuto') return false;
+      if (!['ricevuto', 'in_preparazione', 'pronto'].includes(o.stato)) return false;
+      if (settings.notificaEscludiBanco && o.canale === 'banco') return false;
+      if (settings.notificaSoloCanali && !settings.notificaSoloCanali.includes(o.canale)) return false;
 
-          return true;
-        });
+      return true;
+    });
 
-        // Riproduci il suono solo se NON è il primo caricamento e sono presenti nuovi elementi
-        if (!isFirstLoad.current && nuoviOrdini.length > 0 && settings.suonoNotificaAbilitato) {
-          const oraCorrente = Date.now();
-          const cooldownMs = (settings.suonoCooldown ?? 10) * 1000;
+    // Riproduci il suono solo se NON è il primo caricamento e sono presenti nuovi elementi
+    if (!isFirstLoad.current && nuoviOrdini.length > 0 && settings.suonoNotificaAbilitato) {
+      const oraCorrente = Date.now();
+      const cooldownMs = (settings.suonoCooldown ?? 10) * 1000;
 
-          const deveSuonare = nuoviOrdini.some(o => {
-            if (settings.suonoSoloOnline && o.canale !== 'online') return false;
-            return true;
-          });
+      const deveSuonare = nuoviOrdini.some(o => {
+        if (settings.suonoSoloOnline && o.canale !== 'online') return false;
+        return true;
+      });
 
-          if (deveSuonare && (oraCorrente - ultimoSuonoRef.current >= cooldownMs)) {
-            playChime(settings.suonoVolume ?? 0.3);
-            ultimoSuonoRef.current = oraCorrente;
-          }
-        }
+      if (deveSuonare && (oraCorrente - ultimoSuonoRef.current >= cooldownMs)) {
+        playChime(settings.suonoVolume ?? 0.3);
+        ultimoSuonoRef.current = oraCorrente;
+      }
+    }
 
-        // Memorizza tutti gli ID visti
-        data.forEach(o => prevOrdiniIds.current.add(o.id));
+    // Memorizza tutti gli ID visti
+    ordini.forEach(o => prevOrdiniIds.current.add(o.id));
 
-        if (isFirstLoad.current) {
-          isFirstLoad.current = false;
-        }
-
-        setOrdini(data);
-      } catch { /* silenzioso */ }
-    };
-    carica();
-    const interval = setInterval(carica, 30_000);
-    return () => clearInterval(interval);
-  }, [settings]);
+    if (isFirstLoad.current) {
+      isFirstLoad.current = false;
+    }
+  }, [ordini, settings]);
 
   // Chiudi cliccando fuori
   useEffect(() => {

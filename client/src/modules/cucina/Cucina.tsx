@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Clock, CheckCircle, AlertTriangle, ChefHat, RefreshCw } from 'lucide-react';
 import { tempoTrascorso } from '@/utils';
 import { clsx } from 'clsx';
-import { getOrdini, aggiornaStatoOrdine } from '@/api/ordini';
+import { aggiornaStatoOrdine } from '@/api/ordini';
 import type { OrdineAPI, StatoOrdineAPI } from '@/api/ordini';
+import { useOrders } from '@/contexts/OrdersContext';
 
 const canaleIcon: Record<string, string> = { banco: '🪑', telefono: '📞', online: '🌐' };
 const TEMPO_ALERT = 20; // minuti
@@ -19,28 +20,9 @@ function minutiTrascorsi(iso: string): number {
 }
 
 export default function Cucina() {
-  const [ordini, setOrdini] = useState<OrdineAPI[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { ordini, refreshOrdini, loading } = useOrders();
   const [loadingIds, setLoadingIds] = useState<Set<number>>(new Set());
   const [activeTab, setActiveTab] = useState<'ricevuto' | 'in_preparazione' | 'pronto'>('ricevuto');
-
-  const carica = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
-    try {
-      const data = await getOrdini({ stato: 'attivi' });
-      setOrdini(data);
-    } catch {
-      // fail silently on polling
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    carica();
-    const interval = setInterval(() => carica(true), 20_000);
-    return () => clearInterval(interval);
-  }, [carica]);
 
   const avanza = async (o: OrdineAPI) => {
     const nextMap: Partial<Record<StatoOrdineAPI, StatoOrdineAPI>> = {
@@ -52,10 +34,10 @@ export default function Cucina() {
 
     setLoadingIds(prev => new Set(prev).add(o.id));
     try {
-      const aggiornato = await aggiornaStatoOrdine(o.id, next);
-      setOrdini(prev => prev.map(x => x.id === o.id ? { ...x, ...aggiornato } : x));
+      await aggiornaStatoOrdine(o.id, next);
+      await refreshOrdini();
     } catch {
-      await carica(true);
+      await refreshOrdini();
     } finally {
       setLoadingIds(prev => { const s = new Set(prev); s.delete(o.id); return s; });
     }

@@ -45,7 +45,7 @@ function ModalCliente({ cliente, onClose, onSaved }: ModalClienteProps) {
     if (k === 'nome' || k === 'cognome') {
       val = val.replace(/[^a-zA-Z\s'-\u00C0-\u00FF]/g, '');
     } else if (k === 'telefono') {
-      val = val.replace(/\D/g, '');
+      val = val.replace(/[^\d\s\+\-\(\)]/g, '');
     }
     setForm(prev => ({ ...prev, [k]: val }));
   };
@@ -133,9 +133,9 @@ function ModalCliente({ cliente, onClose, onSaved }: ModalClienteProps) {
               <Phone size={13} /> Telefono <span className="text-danger">*</span>
             </label>
             <input
-              type="number"
+              type="tel"
               className={clsx('input', errors.telefono && 'border-danger')}
-              placeholder="Es. 3331234567"
+              placeholder="Es. +39 333 1234567"
               value={form.telefono}
               onChange={set('telefono')}
             />

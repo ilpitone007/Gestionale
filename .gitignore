@@ -16,6 +16,7 @@ client/tsconfig.tsbuildinfo
 pizzeria_db.json
 server/src/db/pizzeria_db.json
 server/pizzeria_db.json
+server/src/db/backups/
 
 # Environment variables
 .env

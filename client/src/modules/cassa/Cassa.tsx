@@ -9,6 +9,7 @@ import { creaOrdine } from '@/api/ordini';
 import type { ProdottoAPI } from '@/api/prodotti';
 import type { CategoriaAPI } from '@/api/categorie';
 import { useNavigate } from 'react-router-dom';
+import { useSettings } from '@/contexts/SettingsContext';
 
 interface RigaCassa {
   prodotto: ProdottoAPI;
@@ -27,6 +28,7 @@ const EMOJI: Record<string, string> = {
 export default function Cassa() {
   const toast = useToast();
   const navigate = useNavigate();
+  const { settings } = useSettings();
 
   const [prodotti, setProdotti] = useState<ProdottoAPI[]>([]);
   const [categorie, setCategorie] = useState<CategoriaAPI[]>([]);
@@ -175,6 +177,21 @@ export default function Cassa() {
     }
   };
 
+  const svuotaCarrello = () => {
+    if (settings.confermaVuotaCarrello) {
+      if (!window.confirm('Sei sicuro di voler svuotare il carrello? Tutti i prodotti inseriti andranno persi.')) {
+        return;
+      }
+    }
+    setRighe([]);
+    setNomeBanco('');
+    setTelefonoBanco('');
+    setSconto(0);
+    setCouponApplicato(null);
+    setCouponCodice('');
+    setNota('');
+  };
+
   return (
     <div className="flex flex-col md:flex-row gap-6 h-[calc(100vh-120px)] overflow-hidden relative">
       {/* Tab Selector for Mobile */}
@@ -303,11 +320,11 @@ export default function Cassa() {
               <div>
                 <label className="label"><Phone size={10} className="inline" /> Cellulare <span className="text-text-muted font-normal">(opzionale)</span></label>
                 <input
-                  type="number"
+                  type="tel"
                   className="input"
-                  placeholder="Es. 3331234567"
+                  placeholder="Es. +39 333 1234567"
                   value={telefonoBanco}
-                  onChange={e => setTelefonoBanco(e.target.value.replace(/\D/g, ''))}
+                  onChange={e => setTelefonoBanco(e.target.value.replace(/[^\d\s\+\-\(\)]/g, ''))}
                 />
               </div>
             </div>
@@ -491,7 +508,7 @@ export default function Cassa() {
 
             <div className="flex gap-2">
               <button
-                onClick={() => { setRighe([]); setNomeBanco(''); setTelefonoBanco(''); setSconto(0); setCouponApplicato(null); setCouponCodice(''); setNota(''); }}
+                onClick={svuotaCarrello}
                 className="btn-secondary flex-1 justify-center"
               >
                 <Trash2 size={14} /> Svuota

@@ -35,6 +35,11 @@ export default function Storico() {
   const [canaleFiltro, setCanaleFiltro] = useState('tutti');
   const [selected, setSelected] = useState<OrdineAPI | null>(null);
   const [ordineStampa, setOrdineStampa] = useState<OrdineAPI | null>(null);
+  const [pagina, setPagina] = useState(1);
+
+  useEffect(() => {
+    setPagina(1);
+  }, [cerca, statoFiltro, canaleFiltro]);
 
   const apriStampa = async (o: OrdineAPI) => {
     try {
@@ -74,6 +79,54 @@ export default function Storico() {
 
   const totaleVendite = filtrati.filter(o => o.stato === 'ritirato').reduce((a, o) => a + (o.totale ?? 0), 0);
 
+  const maxPerPagina = 50;
+  const totalCount = filtrati.length;
+  const totalPages = Math.ceil(totalCount / maxPerPagina) || 1;
+  const ordiniPaginati = filtrati.slice((pagina - 1) * maxPerPagina, pagina * maxPerPagina);
+
+  const esportaCSV = () => {
+    if (filtrati.length === 0) {
+      toast.warning('Nessun ordine da esportare');
+      return;
+    }
+    const headers = ['ID', 'Numero Ordine', 'Cliente', 'Telefono', 'Canale', 'Metodo Pagamento', 'Totale (EUR)', 'Sconto (EUR)', 'Stato', 'Creato Il'];
+    const rows = filtrati.map(o => {
+      const clienteNome = o.cliente 
+        ? `${o.cliente.nome} ${o.cliente.cognome}` 
+        : (o.nome_banco ? `${o.nome_banco} (banco)` : 'Anonimo');
+      const clienteTel = o.cliente?.telefono || o.telefono_banco || '';
+      
+      return [
+        o.id,
+        o.numero_ordine,
+        clienteNome,
+        clienteTel,
+        o.canale,
+        o.metodo_pagamento,
+        o.totale,
+        o.sconto,
+        o.stato,
+        o.creato_il
+      ];
+    });
+
+    const csvContent = "\uFEFF" + [
+      headers.join(','),
+      ...rows.map(row => row.map(val => `"${String(val).replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `storico_ordini_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('CSV esportato con successo!');
+  };
+
   return (
     <div className="flex flex-col gap-6">
       {/* Top bar */}
@@ -94,7 +147,7 @@ export default function Storico() {
           <div className="text-sm text-text-secondary">
             <span className="font-bold text-text-primary">{filtrati.length}</span> ordini — <span className="font-bold text-success">{formatCurrency(totaleVendite)}</span>
           </div>
-          <button className="btn-secondary" onClick={() => toast.info('Export CSV in corso...')}>
+          <button className="btn-secondary" onClick={esportaCSV}>
             <Download size={14} /> Esporta
           </button>
         </div>
@@ -121,7 +174,7 @@ export default function Storico() {
                         ))}
                       </tr>
                     ))
-                  : filtrati.map(o => (
+                  : ordiniPaginati.map(o => (
                       <tr
                         key={o.id}
                         className={clsx('hover:bg-bg transition-colors cursor-pointer', selected?.id === o.id && 'bg-primary/5')}
@@ -148,6 +201,27 @@ export default function Storico() {
               </tbody>
             </table>
           </div>
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-6 py-4 border-t border-border bg-surface">
+              <button
+                disabled={pagina === 1}
+                onClick={() => setPagina(p => Math.max(1, p - 1))}
+                className="btn-secondary py-1.5 px-3 disabled:opacity-50 disabled:pointer-events-none"
+              >
+                Precedente
+              </button>
+              <span className="text-sm text-text-secondary">
+                Pagina <strong>{pagina}</strong> di <strong>{totalPages}</strong>
+              </span>
+              <button
+                disabled={pagina === totalPages}
+                onClick={() => setPagina(p => Math.min(totalPages, p + 1))}
+                className="btn-secondary py-1.5 px-3 disabled:opacity-50 disabled:pointer-events-none"
+              >
+                Successiva
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Mobile card list */}
@@ -159,28 +233,52 @@ export default function Storico() {
           ) : filtrati.length === 0 ? (
             <div className="card text-center py-8 text-text-muted">Nessun ordine trovato</div>
           ) : (
-            filtrati.map(o => (
-              <div
-                key={o.id}
-                onClick={() => setSelected(o)}
-                className="card p-4 flex flex-col gap-2 cursor-pointer hover:border-primary transition-all active:scale-95"
-              >
-                <div className="flex justify-between items-center">
-                  <span className="font-bold text-text-primary text-sm">{o.numero_ordine}</span>
-                  <span className="text-[10px] text-text-muted">{o.creato_il?.split(' ')[0]}</span>
-                </div>
-                <div className="text-xs text-text-secondary">
-                  {o.cliente ? `${o.cliente.nome} ${o.cliente.cognome}` : o.nome_banco ? `cliente banco: ${o.nome_banco}` : 'cliente banco'}
-                </div>
-                <div className="flex justify-between items-center border-t border-gray-100 pt-2 mt-1">
-                  <span className="text-xs font-bold text-text-primary">{formatCurrency(o.totale)}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-text-muted capitalize">{o.canale}</span>
-                    <StatusBadge stato={o.stato} />
+            <>
+              {ordiniPaginati.map(o => (
+                <div
+                  key={o.id}
+                  onClick={() => setSelected(o)}
+                  className="card p-4 flex flex-col gap-2 cursor-pointer hover:border-primary transition-all active:scale-95"
+                >
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold text-text-primary text-sm">{o.numero_ordine}</span>
+                    <span className="text-[10px] text-text-muted">{o.creato_il?.split(' ')[0]}</span>
+                  </div>
+                  <div className="text-xs text-text-secondary">
+                    {o.cliente ? `${o.cliente.nome} ${o.cliente.cognome}` : o.nome_banco ? `cliente banco: ${o.nome_banco}` : 'cliente banco'}
+                  </div>
+                  <div className="flex justify-between items-center border-t border-gray-100 pt-2 mt-1">
+                    <span className="text-xs font-bold text-text-primary">{formatCurrency(o.totale)}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-text-muted capitalize">{o.canale}</span>
+                      <StatusBadge stato={o.stato} />
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))
+              ))}
+
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between p-4 bg-surface rounded-2xl border border-border mt-2">
+                  <button
+                    disabled={pagina === 1}
+                    onClick={() => setPagina(p => Math.max(1, p - 1))}
+                    className="btn-secondary py-1.5 px-3 disabled:opacity-50 disabled:pointer-events-none text-xs"
+                  >
+                    Precedente
+                  </button>
+                  <span className="text-xs text-text-secondary">
+                    Pagina {pagina} di {totalPages}
+                  </span>
+                  <button
+                    disabled={pagina === totalPages}
+                    onClick={() => setPagina(p => Math.min(totalPages, p + 1))}
+                    className="btn-secondary py-1.5 px-3 disabled:opacity-50 disabled:pointer-events-none text-xs"
+                  >
+                    Successiva
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
 

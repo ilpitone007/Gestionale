@@ -1,0 +1,986 @@
+{
+  "utenti": [
+    {
+      "id": 1,
+      "username": "titolare",
+      "password_hash": "$2a$10$oyNYHsicjUvYsJblyIGIEOa8m162Qrm0SfXjcnY242PoLJrBhJBAq",
+      "nome": "Mario",
+      "cognome": "Rossi",
+      "ruolo": "titolare",
+      "attivo": 1,
+      "creato_il": "2026-06-11T18:21:53.173Z"
+    },
+    {
+      "id": 2,
+      "username": "responsabile",
+      "password_hash": "$2a$10$oyNYHsicjUvYsJblyIGIEOlIj5fxSKvpqO9qb9JaZHHKWosW7esfi",
+      "nome": "Luigi",
+      "cognome": "Verdi",
+      "ruolo": "responsabile",
+      "attivo": 1,
+      "creato_il": "2026-06-11T18:21:53.174Z"
+    },
+    {
+      "id": 3,
+      "username": "dipendente",
+      "password_hash": "$2a$10$oyNYHsicjUvYsJblyIGIEOvXxy88pJsXPQbdh81OSdbgbTxJRUN5q",
+      "nome": "Giovanni",
+      "cognome": "Bianchi",
+      "ruolo": "dipendente",
+      "attivo": 1,
+      "creato_il": "2026-06-11T18:21:53.174Z"
+    }
+  ],
+  "categorie": [
+    {
+      "id": 1,
+      "nome": "Pizze",
+      "categoria_padre_id": null,
+      "ordine_visualizzazione": 1,
+      "attiva": 1
+    },
+    {
+      "id": 2,
+      "nome": "Fritti Tradizionali",
+      "categoria_padre_id": null,
+      "ordine_visualizzazione": 2,
+      "attiva": 1
+    },
+    {
+      "id": 3,
+      "nome": "Primi Piatti",
+      "categoria_padre_id": null,
+      "ordine_visualizzazione": 3,
+      "attiva": 1
+    },
+    {
+      "id": 4,
+      "nome": "Dolci Artigianali",
+      "categoria_padre_id": null,
+      "ordine_visualizzazione": 4,
+      "attiva": 1
+    },
+    {
+      "id": 5,
+      "nome": "Bevande e Birre",
+      "categoria_padre_id": null,
+      "ordine_visualizzazione": 5,
+      "attiva": 1
+    },
+    {
+      "id": 6,
+      "nome": "Pizze Classiche",
+      "categoria_padre_id": 1,
+      "ordine_visualizzazione": 1,
+      "attiva": 1
+    },
+    {
+      "id": 7,
+      "nome": "Pizze Speciali",
+      "categoria_padre_id": 1,
+      "ordine_visualizzazione": 2,
+      "attiva": 1
+    },
+    {
+      "id": 8,
+      "nome": "Pizze Gourmet",
+      "categoria_padre_id": 1,
+      "ordine_visualizzazione": 3,
+      "attiva": 1
+    }
+  ],
+  "prodotti": [
+    {
+      "id": 1,
+      "categoria_id": 6,
+      "nome": "Margherita",
+      "descrizione": "Pomodoro, mozzarella e basilico fresco",
+      "prezzo": 6,
+      "costo": 1.6,
+      "personalizzabile": 1,
+      "disponibile": 1,
+      "ordine_visualizzazione": 1
+    },
+    {
+      "id": 2,
+      "categoria_id": 6,
+      "nome": "Marinara",
+      "descrizione": "Pomodoro, aglio, origano e olio EVO",
+      "prezzo": 5,
+      "costo": 1,
+      "personalizzabile": 1,
+      "disponibile": 1,
+      "ordine_visualizzazione": 2
+    },
+    {
+      "id": 3,
+      "categoria_id": 6,
+      "nome": "Napoli",
+      "descrizione": "Pomodoro, mozzarella, alici di Cetara e origano",
+      "prezzo": 7.5,
+      "costo": 2.1,
+      "personalizzabile": 1,
+      "disponibile": 1,
+      "ordine_visualizzazione": 3
+    },
+    {
+      "id": 4,
+      "categoria_id": 6,
+      "nome": "Diavola",
+      "descrizione": "Pomodoro, mozzarella e salame piccante calabrese",
+      "prezzo": 7.5,
+      "costo": 2,
+      "personalizzabile": 1,
+      "disponibile": 1,
+      "ordine_visualizzazione": 4
+    },
+    {
+      "id": 5,
+      "categoria_id": 6,
+      "nome": "Capricciosa",
+      "descrizione": "Pomodoro, mozzarella, cotto, funghi, carciofini e olive nere",
+      "prezzo": 8.5,
+      "costo": 2.6,
+      "personalizzabile": 1,
+      "disponibile": 1,
+      "ordine_visualizzazione": 5
+    },
+    {
+      "id": 6,
+      "categoria_id": 6,
+      "nome": "Quattro Formaggi",
+      "descrizione": "Mozzarella, gorgonzola DOP, provola affumicata, scaglie di parmigiano",
+      "prezzo": 8.5,
+      "costo": 2.3,
+      "personalizzabile": 1,
+      "disponibile": 1,
+      "ordine_visualizzazione": 6
+    },
+    {
+      "id": 7,
+      "categoria_id": 6,
+      "nome": "Bufalina",
+      "descrizione": "Pomodoro, mozzarella di bufala campana DOP e basilico",
+      "prezzo": 8,
+      "costo": 2.2,
+      "personalizzabile": 1,
+      "disponibile": 1,
+      "ordine_visualizzazione": 7
+    },
+    {
+      "id": 8,
+      "categoria_id": 7,
+      "nome": "Salsiccia e Friarielli",
+      "descrizione": "Bianca con mozzarella, salsiccia fresca e friarielli saltati",
+      "prezzo": 9.5,
+      "costo": 2.8,
+      "personalizzabile": 1,
+      "disponibile": 1,
+      "ordine_visualizzazione": 1
+    },
+    {
+      "id": 9,
+      "categoria_id": 7,
+      "nome": "Calabrese Suprema",
+      "descrizione": "Pomodoro, mozzarella, salame piccante e nduja di Spilinga",
+      "prezzo": 9,
+      "costo": 2.6,
+      "personalizzabile": 1,
+      "disponibile": 1,
+      "ordine_visualizzazione": 2
+    },
+    {
+      "id": 10,
+      "categoria_id": 7,
+      "nome": "Quattro Stagioni",
+      "descrizione": "Pomodoro, mozzarella, suddivisa in: cotto, funghi, carciofini, salame",
+      "prezzo": 8.5,
+      "costo": 2.5,
+      "personalizzabile": 1,
+      "disponibile": 1,
+      "ordine_visualizzazione": 3
+    },
+    {
+      "id": 11,
+      "categoria_id": 7,
+      "nome": "Ortolana",
+      "descrizione": "Pomodoro, mozzarella, zucchine, melanzane e peperoni grigliati",
+      "prezzo": 8,
+      "costo": 2.1,
+      "personalizzabile": 1,
+      "disponibile": 1,
+      "ordine_visualizzazione": 4
+    },
+    {
+      "id": 12,
+      "categoria_id": 8,
+      "nome": "Regina Gourmet",
+      "descrizione": "Mozzarella di bufala, pomodorini secchi, burrata fresca pugliese e olio al basilico",
+      "prezzo": 12.5,
+      "costo": 4,
+      "personalizzabile": 1,
+      "disponibile": 1,
+      "ordine_visualizzazione": 1
+    },
+    {
+      "id": 13,
+      "categoria_id": 8,
+      "nome": "Tartufata",
+      "descrizione": "Mozzarella, salsa al tartufo, funghi porcini, scaglie di grana e olio tartufato",
+      "prezzo": 13,
+      "costo": 4.5,
+      "personalizzabile": 1,
+      "disponibile": 1,
+      "ordine_visualizzazione": 2
+    },
+    {
+      "id": 14,
+      "categoria_id": 8,
+      "nome": "Pistacchiosa",
+      "descrizione": "Mozzarella, pesto di pistacchio, mortadella Bologna IGP e granella di pistacchi",
+      "prezzo": 12.5,
+      "costo": 3.8,
+      "personalizzabile": 1,
+      "disponibile": 1,
+      "ordine_visualizzazione": 3
+    },
+    {
+      "id": 15,
+      "categoria_id": 2,
+      "nome": "Supplì Classico",
+      "descrizione": "Riso al pomodoro con cuore di mozzarella filante",
+      "prezzo": 1.8,
+      "costo": 0.4,
+      "personalizzabile": 0,
+      "disponibile": 1,
+      "ordine_visualizzazione": 1
+    },
+    {
+      "id": 16,
+      "categoria_id": 2,
+      "nome": "Supplì Cacio e Pepe",
+      "descrizione": "Riso con pecorino romano DOP, pepe nero e mozzarella",
+      "prezzo": 2,
+      "costo": 0.5,
+      "personalizzabile": 0,
+      "disponibile": 1,
+      "ordine_visualizzazione": 2
+    },
+    {
+      "id": 17,
+      "categoria_id": 2,
+      "nome": "Crocchetta di Patate",
+      "descrizione": "Patate fresche, prezzemolo, parmigiano e mozzarella",
+      "prezzo": 1.5,
+      "costo": 0.3,
+      "personalizzabile": 0,
+      "disponibile": 1,
+      "ordine_visualizzazione": 3
+    },
+    {
+      "id": 18,
+      "categoria_id": 2,
+      "nome": "Frittatina Napoletana",
+      "descrizione": "Bucatini con besciamella, carne macinata, piselli e provola impanati e fritti",
+      "prezzo": 2.5,
+      "costo": 0.7,
+      "personalizzabile": 0,
+      "disponibile": 1,
+      "ordine_visualizzazione": 4
+    },
+    {
+      "id": 19,
+      "categoria_id": 2,
+      "nome": "Fiore di Zucca",
+      "descrizione": "Fiore di zucca pastellato ripieno di ricotta e acciughe",
+      "prezzo": 2.2,
+      "costo": 0.6,
+      "personalizzabile": 0,
+      "disponibile": 1,
+      "ordine_visualizzazione": 5
+    },
+    {
+      "id": 20,
+      "categoria_id": 3,
+      "nome": "Lasagna alla Bolognese",
+      "descrizione": "Lasagna classica fatta in casa con ragù di carne e besciamella",
+      "prezzo": 8.5,
+      "costo": 2.6,
+      "personalizzabile": 0,
+      "disponibile": 1,
+      "ordine_visualizzazione": 1
+    },
+    {
+      "id": 21,
+      "categoria_id": 3,
+      "nome": "Gnocchi alla Sorrentina",
+      "descrizione": "Gnocchi di patate al pomodoro, mozzarella filante and basilico al forno",
+      "prezzo": 8,
+      "costo": 2,
+      "personalizzabile": 0,
+      "disponibile": 1,
+      "ordine_visualizzazione": 2
+    },
+    {
+      "id": 22,
+      "categoria_id": 4,
+      "nome": "Tiramisù al Caffè",
+      "descrizione": "Tiramisù artigianale monoporzione con mascarpone e caffè espresso",
+      "prezzo": 4.5,
+      "costo": 1.1,
+      "personalizzabile": 0,
+      "disponibile": 1,
+      "ordine_visualizzazione": 1
+    },
+    {
+      "id": 23,
+      "categoria_id": 4,
+      "nome": "Babà Napoletano",
+      "descrizione": "Babà classico napoletano bagnato al rum",
+      "prezzo": 4,
+      "costo": 0.9,
+      "personalizzabile": 0,
+      "disponibile": 1,
+      "ordine_visualizzazione": 2
+    },
+    {
+      "id": 24,
+      "categoria_id": 4,
+      "nome": "Panna Cotta ai Frutti di Bosco",
+      "descrizione": "Panna cotta artigianale servita con salsa ai frutti di bosco",
+      "prezzo": 4,
+      "costo": 0.85,
+      "personalizzabile": 0,
+      "disponibile": 1,
+      "ordine_visualizzazione": 3
+    },
+    {
+      "id": 25,
+      "categoria_id": 5,
+      "nome": "Acqua Minerale Naturale 50cl",
+      "descrizione": "In bottiglia di plastica",
+      "prezzo": 1,
+      "costo": 0.15,
+      "personalizzabile": 0,
+      "disponibile": 1,
+      "ordine_visualizzazione": 1
+    },
+    {
+      "id": 26,
+      "categoria_id": 5,
+      "nome": "Acqua Minerale Frizzante 50cl",
+      "descrizione": "In bottiglia di plastica",
+      "prezzo": 1,
+      "costo": 0.15,
+      "personalizzabile": 0,
+      "disponibile": 1,
+      "ordine_visualizzazione": 2
+    },
+    {
+      "id": 27,
+      "categoria_id": 5,
+      "nome": "Coca Cola Lattina 33cl",
+      "descrizione": "Coca Cola classica",
+      "prezzo": 2.2,
+      "costo": 0.55,
+      "personalizzabile": 0,
+      "disponibile": 1,
+      "ordine_visualizzazione": 3
+    },
+    {
+      "id": 28,
+      "categoria_id": 5,
+      "nome": "Coca Zero Lattina 33cl",
+      "descrizione": "Coca Cola senza zuccheri",
+      "prezzo": 2.2,
+      "costo": 0.55,
+      "personalizzabile": 0,
+      "disponibile": 1,
+      "ordine_visualizzazione": 4
+    },
+    {
+      "id": 29,
+      "categoria_id": 5,
+      "nome": "Fanta Lattina 33cl",
+      "descrizione": "Fanta orange",
+      "prezzo": 2.2,
+      "costo": 0.55,
+      "personalizzabile": 0,
+      "disponibile": 1,
+      "ordine_visualizzazione": 5
+    },
+    {
+      "id": 30,
+      "categoria_id": 5,
+      "nome": "Sprite Lattina 33cl",
+      "descrizione": "Sprite limone",
+      "prezzo": 2.2,
+      "costo": 0.55,
+      "personalizzabile": 0,
+      "disponibile": 1,
+      "ordine_visualizzazione": 6
+    },
+    {
+      "id": 31,
+      "categoria_id": 5,
+      "nome": "Birra Moretti Ricetta Classica 66cl",
+      "descrizione": "Birra lager italiana",
+      "prezzo": 3.5,
+      "costo": 1.05,
+      "personalizzabile": 0,
+      "disponibile": 1,
+      "ordine_visualizzazione": 7
+    },
+    {
+      "id": 32,
+      "categoria_id": 5,
+      "nome": "Birra Ichnusa Non Filtrata 50cl",
+      "descrizione": "Birra bionda sarda a bassa fermentazione",
+      "prezzo": 3.8,
+      "costo": 1.25,
+      "personalizzabile": 0,
+      "disponibile": 1,
+      "ordine_visualizzazione": 8
+    }
+  ],
+  "ingredienti": [
+    {
+      "id": 1,
+      "nome": "Pomodoro",
+      "prezzo_aggiunta": 0.5,
+      "prezzo_rimozione": 0,
+      "tipo": "base",
+      "disponibile": 1
+    },
+    {
+      "id": 2,
+      "nome": "Mozzarella",
+      "prezzo_aggiunta": 0.8,
+      "prezzo_rimozione": 0,
+      "tipo": "base",
+      "disponibile": 1
+    },
+    {
+      "id": 3,
+      "nome": "Prosciutto Cotto",
+      "prezzo_aggiunta": 1.2,
+      "prezzo_rimozione": 0,
+      "tipo": "extra",
+      "disponibile": 1
+    },
+    {
+      "id": 4,
+      "nome": "Funghi Champignon",
+      "prezzo_aggiunta": 1,
+      "prezzo_rimozione": 0,
+      "tipo": "extra",
+      "disponibile": 1
+    },
+    {
+      "id": 5,
+      "nome": "Salame Piccante",
+      "prezzo_aggiunta": 1.2,
+      "prezzo_rimozione": 0,
+      "tipo": "extra",
+      "disponibile": 1
+    },
+    {
+      "id": 6,
+      "nome": "Carciofini sott'olio",
+      "prezzo_aggiunta": 1,
+      "prezzo_rimozione": 0,
+      "tipo": "extra",
+      "disponibile": 1
+    },
+    {
+      "id": 7,
+      "nome": "Olive Nere",
+      "prezzo_aggiunta": 0.8,
+      "prezzo_rimozione": 0,
+      "tipo": "extra",
+      "disponibile": 1
+    },
+    {
+      "id": 8,
+      "nome": "Alici di Cetara",
+      "prezzo_aggiunta": 1.5,
+      "prezzo_rimozione": 0,
+      "tipo": "extra",
+      "disponibile": 1
+    },
+    {
+      "id": 9,
+      "nome": "Gorgonzola DOP",
+      "prezzo_aggiunta": 1.5,
+      "prezzo_rimozione": 0,
+      "tipo": "premium",
+      "disponibile": 1
+    },
+    {
+      "id": 10,
+      "nome": "Nduja di Spilinga",
+      "prezzo_aggiunta": 1.5,
+      "prezzo_rimozione": 0,
+      "tipo": "premium",
+      "disponibile": 1
+    },
+    {
+      "id": 11,
+      "nome": "Burrata Pugliese",
+      "prezzo_aggiunta": 2.5,
+      "prezzo_rimozione": 0,
+      "tipo": "premium",
+      "disponibile": 1
+    },
+    {
+      "id": 12,
+      "nome": "Salsa al Tartufo",
+      "prezzo_aggiunta": 3,
+      "prezzo_rimozione": 0,
+      "tipo": "premium",
+      "disponibile": 1
+    },
+    {
+      "id": 13,
+      "nome": "Friarielli Napoletani",
+      "prezzo_aggiunta": 1.8,
+      "prezzo_rimozione": 0,
+      "tipo": "premium",
+      "disponibile": 1
+    },
+    {
+      "id": 14,
+      "nome": "Salsiccia di maiale",
+      "prezzo_aggiunta": 1.5,
+      "prezzo_rimozione": 0,
+      "tipo": "premium",
+      "disponibile": 1
+    },
+    {
+      "id": 15,
+      "nome": "Pesto di Pistacchio",
+      "prezzo_aggiunta": 2.2,
+      "prezzo_rimozione": 0,
+      "tipo": "premium",
+      "disponibile": 1
+    },
+    {
+      "id": 16,
+      "nome": "Mortadella Bologna IGP",
+      "prezzo_aggiunta": 1.8,
+      "prezzo_rimozione": 0,
+      "tipo": "premium",
+      "disponibile": 1
+    }
+  ],
+  "prodotto_ingredienti": [
+    {
+      "prodotto_id": 1,
+      "ingrediente_id": 1,
+      "predefinito": 1
+    },
+    {
+      "prodotto_id": 1,
+      "ingrediente_id": 2,
+      "predefinito": 1
+    },
+    {
+      "prodotto_id": 2,
+      "ingrediente_id": 1,
+      "predefinito": 1
+    },
+    {
+      "prodotto_id": 3,
+      "ingrediente_id": 1,
+      "predefinito": 1
+    },
+    {
+      "prodotto_id": 3,
+      "ingrediente_id": 2,
+      "predefinito": 1
+    },
+    {
+      "prodotto_id": 3,
+      "ingrediente_id": 8,
+      "predefinito": 1
+    },
+    {
+      "prodotto_id": 4,
+      "ingrediente_id": 1,
+      "predefinito": 1
+    },
+    {
+      "prodotto_id": 4,
+      "ingrediente_id": 2,
+      "predefinito": 1
+    },
+    {
+      "prodotto_id": 4,
+      "ingrediente_id": 5,
+      "predefinito": 1
+    },
+    {
+      "prodotto_id": 5,
+      "ingrediente_id": 1,
+      "predefinito": 1
+    },
+    {
+      "prodotto_id": 5,
+      "ingrediente_id": 2,
+      "predefinito": 1
+    },
+    {
+      "prodotto_id": 5,
+      "ingrediente_id": 3,
+      "predefinito": 1
+    },
+    {
+      "prodotto_id": 5,
+      "ingrediente_id": 4,
+      "predefinito": 1
+    },
+    {
+      "prodotto_id": 5,
+      "ingrediente_id": 6,
+      "predefinito": 1
+    },
+    {
+      "prodotto_id": 5,
+      "ingrediente_id": 7,
+      "predefinito": 1
+    },
+    {
+      "prodotto_id": 6,
+      "ingrediente_id": 2,
+      "predefinito": 1
+    },
+    {
+      "prodotto_id": 6,
+      "ingrediente_id": 9,
+      "predefinito": 1
+    },
+    {
+      "prodotto_id": 7,
+      "ingrediente_id": 1,
+      "predefinito": 1
+    },
+    {
+      "prodotto_id": 7,
+      "ingrediente_id": 2,
+      "predefinito": 1
+    },
+    {
+      "prodotto_id": 8,
+      "ingrediente_id": 2,
+      "predefinito": 1
+    },
+    {
+      "prodotto_id": 8,
+      "ingrediente_id": 14,
+      "predefinito": 1
+    },
+    {
+      "prodotto_id": 8,
+      "ingrediente_id": 13,
+      "predefinito": 1
+    },
+    {
+      "prodotto_id": 9,
+      "ingrediente_id": 1,
+      "predefinito": 1
+    },
+    {
+      "prodotto_id": 9,
+      "ingrediente_id": 2,
+      "predefinito": 1
+    },
+    {
+      "prodotto_id": 9,
+      "ingrediente_id": 5,
+      "predefinito": 1
+    },
+    {
+      "prodotto_id": 9,
+      "ingrediente_id": 10,
+      "predefinito": 1
+    },
+    {
+      "prodotto_id": 10,
+      "ingrediente_id": 1,
+      "predefinito": 1
+    },
+    {
+      "prodotto_id": 10,
+      "ingrediente_id": 2,
+      "predefinito": 1
+    },
+    {
+      "prodotto_id": 10,
+      "ingrediente_id": 3,
+      "predefinito": 1
+    },
+    {
+      "prodotto_id": 10,
+      "ingrediente_id": 4,
+      "predefinito": 1
+    },
+    {
+      "prodotto_id": 11,
+      "ingrediente_id": 1,
+      "predefinito": 1
+    },
+    {
+      "prodotto_id": 11,
+      "ingrediente_id": 2,
+      "predefinito": 1
+    },
+    {
+      "prodotto_id": 12,
+      "ingrediente_id": 2,
+      "predefinito": 1
+    },
+    {
+      "prodotto_id": 12,
+      "ingrediente_id": 11,
+      "predefinito": 1
+    },
+    {
+      "prodotto_id": 13,
+      "ingrediente_id": 2,
+      "predefinito": 1
+    },
+    {
+      "prodotto_id": 13,
+      "ingrediente_id": 12,
+      "predefinito": 1
+    },
+    {
+      "prodotto_id": 13,
+      "ingrediente_id": 4,
+      "predefinito": 1
+    },
+    {
+      "prodotto_id": 14,
+      "ingrediente_id": 2,
+      "predefinito": 1
+    },
+    {
+      "prodotto_id": 14,
+      "ingrediente_id": 15,
+      "predefinito": 1
+    },
+    {
+      "prodotto_id": 14,
+      "ingrediente_id": 16,
+      "predefinito": 1
+    }
+  ],
+  "clienti": [
+    {
+      "id": 1,
+      "nome": "Giuseppe",
+      "cognome": "Rossi",
+      "telefono": "3331234567",
+      "email": "giuseppe.rossi@email.com",
+      "note": "Pizza ben cotta, quasi bruciacchiata al bordo",
+      "punti_fedelta": 140,
+      "contatore_pizze": 4,
+      "creato_il": "2026-05-01 12:00:00",
+      "ultimo_ordine": "2026-05-28 20:30:00"
+    },
+    {
+      "id": 2,
+      "nome": "Laura",
+      "cognome": "Bianchi",
+      "telefono": "3479876543",
+      "email": "laura.bianchi@email.com",
+      "note": "Allergica a crostacei e frutti di mare",
+      "punti_fedelta": 45,
+      "contatore_pizze": 1,
+      "creato_il": "2026-05-10 15:20:00",
+      "ultimo_ordine": "2026-05-25 19:40:00"
+    },
+    {
+      "id": 3,
+      "nome": "Marco",
+      "cognome": "Neri",
+      "telefono": "3291122334",
+      "email": null,
+      "note": "Citofono rotto int. 12, suonare Rossi al piano terra",
+      "punti_fedelta": 245,
+      "contatore_pizze": 8,
+      "creato_il": "2026-05-05 18:00:00",
+      "ultimo_ordine": "2026-05-29 21:00:00"
+    },
+    {
+      "id": 4,
+      "nome": "Francesca",
+      "cognome": "Verdi",
+      "telefono": "3404455667",
+      "email": "fran.verdi@email.com",
+      "note": null,
+      "punti_fedelta": 15,
+      "contatore_pizze": 0,
+      "creato_il": "2026-05-28 19:00:00",
+      "ultimo_ordine": "2026-05-28 20:05:00"
+    }
+  ],
+  "ordini": [
+    {
+      "id": 1,
+      "numero_ordine": "ORD-20260528-001",
+      "cliente_id": 1,
+      "utente_id": 3,
+      "stato": "ritirato",
+      "canale": "telefono",
+      "metodo_pagamento": "contanti",
+      "totale": 15.5,
+      "sconto": 0,
+      "nota": "Consegna rapida",
+      "creato_il": "2026-05-28 19:30:00",
+      "pronto_il": "2026-05-28 19:45:00",
+      "ritirato_il": "2026-05-28 20:30:00"
+    },
+    {
+      "id": 2,
+      "numero_ordine": "ORD-20260529-001",
+      "cliente_id": 3,
+      "utente_id": 2,
+      "stato": "ritirato",
+      "canale": "banco",
+      "metodo_pagamento": "pos",
+      "totale": 25,
+      "sconto": 0,
+      "nota": "",
+      "creato_il": "2026-05-29 20:00:00",
+      "pronto_il": "2026-05-29 20:20:00",
+      "ritirato_il": "2026-05-29 21:00:00"
+    }
+  ],
+  "righe_ordine": [
+    {
+      "id": 1,
+      "ordine_id": 1,
+      "prodotto_id": 1,
+      "quantita": 2,
+      "prezzo_unitario": 6,
+      "personalizzazioni_json": "{\"aggiunti\":[],\"rimossi\":[]}",
+      "nota": ""
+    },
+    {
+      "id": 2,
+      "ordine_id": 1,
+      "prodotto_id": 7,
+      "quantita": 1,
+      "prezzo_unitario": 8,
+      "personalizzazioni_json": "{\"aggiunti\":[],\"rimossi\":[]}",
+      "nota": ""
+    },
+    {
+      "id": 3,
+      "ordine_id": 2,
+      "prodotto_id": 4,
+      "quantita": 2,
+      "prezzo_unitario": 7.5,
+      "personalizzazioni_json": "{\"aggiunti\":[],\"rimossi\":[]}",
+      "nota": ""
+    },
+    {
+      "id": 4,
+      "ordine_id": 2,
+      "prodotto_id": 12,
+      "quantita": 1,
+      "prezzo_unitario": 12.5,
+      "personalizzazioni_json": "{\"aggiunti\":[12],\"rimossi\":[2]}",
+      "nota": "Sostituire mozzarella con burrata"
+    }
+  ],
+  "coupon": [
+    {
+      "id": 1,
+      "codice": "SCONTO10",
+      "tipo": "percentuale",
+      "valore": 10,
+      "prodotto_gratis_id": null,
+      "valido_dal": "2026-01-01",
+      "valido_al": "2026-12-31",
+      "utilizzi_massimi": 9999,
+      "utilizzi_correnti": 0,
+      "attivo": 1
+    },
+    {
+      "id": 2,
+      "codice": "PIZZA5EURO",
+      "tipo": "fisso",
+      "valore": 5,
+      "prodotto_gratis_id": null,
+      "valido_dal": "2026-01-01",
+      "valido_al": "2026-12-31",
+      "utilizzi_massimi": 9999,
+      "utilizzi_correnti": 0,
+      "attivo": 1
+    }
+  ],
+  "coupon_clienti": [
+    {
+      "id": 1,
+      "coupon_id": 1,
+      "cliente_id": 1,
+      "utilizzato": 0,
+      "assegnato_il": "2026-05-01 12:00:00",
+      "utilizzato_il": null
+    },
+    {
+      "id": 2,
+      "coupon_id": 2,
+      "cliente_id": 2,
+      "utilizzato": 0,
+      "assegnato_il": "2026-05-10 15:20:00",
+      "utilizzato_il": null
+    }
+  ],
+  "storico_punti": [
+    {
+      "id": 1,
+      "cliente_id": 1,
+      "ordine_id": null,
+      "punti": 50,
+      "descrizione": "Punti iscrizione omaggio",
+      "data": "2026-05-10 18:30:00"
+    },
+    {
+      "id": 2,
+      "cliente_id": 1,
+      "ordine_id": null,
+      "punti": 90,
+      "descrizione": "Punti spesi in ordini precedenti",
+      "data": "2026-05-20 20:15:00"
+    },
+    {
+      "id": 3,
+      "cliente_id": 2,
+      "ordine_id": null,
+      "punti": 45,
+      "descrizione": "Punti accreditati per ordine",
+      "data": "2026-05-25 19:40:00"
+    },
+    {
+      "id": 4,
+      "cliente_id": 3,
+      "ordine_id": null,
+      "punti": 245,
+      "descrizione": "Punti accreditati da storico transazioni",
+      "data": "2026-05-15 21:00:00"
+    },
+    {
+      "id": 5,
+      "cliente_id": 4,
+      "ordine_id": null,
+      "punti": 15,
+      "descrizione": "Punti per ordine registrato",
+      "data": "2026-05-28 20:05:00"
+    }
+  ],
+  "logs": [],
+  "impostazioni": {}
+}

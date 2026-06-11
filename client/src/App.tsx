@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { ToastProvider } from '@/contexts/ToastContext';
 import { SettingsProvider } from '@/contexts/SettingsContext';
+import { OrdersProvider } from '@/contexts/OrdersContext';
 import AppLayout from '@/components/layout/AppLayout';
 import Login from '@/modules/auth/Login';
 import Dashboard from '@/modules/dashboard/Dashboard';
@@ -17,7 +18,7 @@ import Report from '@/modules/report/Report';
 import Storico from '@/modules/storico/Storico';
 import Impostazioni from '@/modules/impostazioni/Impostazioni';
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
+function ProtectedRoute({ children, ruoli }: { children: React.ReactNode; ruoli?: string[] }) {
   const { utente, loading } = useAuth();
   if (loading) {
     return (
@@ -29,7 +30,13 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
-  return utente ? <>{children}</> : <Navigate to="/login" replace />;
+  if (!utente) {
+    return <Navigate to="/login" replace />;
+  }
+  if (ruoli && !ruoli.includes(utente.ruolo)) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return <>{children}</>;
 }
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
@@ -42,28 +49,30 @@ export default function App() {
   return (
     <SettingsProvider>
       <AuthProvider>
-        <ToastProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-            <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-              <Route index element={<Navigate to="/dashboard" replace />} />
-              <Route path="/dashboard"    element={<Dashboard />} />
-              <Route path="/cassa"        element={<Cassa />} />
-              <Route path="/ordini"       element={<Ordini />} />
-              <Route path="/cucina"       element={<Cucina />} />
-              <Route path="/menu"         element={<Menu />} />
-              <Route path="/inventario"   element={<Inventario />} />
-              <Route path="/consegne"     element={<Consegne />} />
-              <Route path="/clienti"      element={<Clienti />} />
-              <Route path="/report"       element={<Report />} />
-              <Route path="/storico"      element={<Storico />} />
-              <Route path="/impostazioni" element={<Impostazioni />} />
-            </Route>
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
-        </BrowserRouter>
-        </ToastProvider>
+        <OrdersProvider>
+          <ToastProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+              <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+                <Route index element={<Navigate to="/dashboard" replace />} />
+                <Route path="/dashboard"    element={<Dashboard />} />
+                <Route path="/cassa"        element={<Cassa />} />
+                <Route path="/ordini"       element={<Ordini />} />
+                <Route path="/cucina"       element={<Cucina />} />
+                <Route path="/menu"         element={<ProtectedRoute ruoli={['titolare']}><Menu /></ProtectedRoute>} />
+                <Route path="/inventario"   element={<ProtectedRoute ruoli={['titolare', 'responsabile']}><Inventario /></ProtectedRoute>} />
+                <Route path="/consegne"     element={<Consegne />} />
+                <Route path="/clienti"      element={<ProtectedRoute ruoli={['titolare', 'responsabile']}><Clienti /></ProtectedRoute>} />
+                <Route path="/report"       element={<ProtectedRoute ruoli={['titolare', 'responsabile']}><Report /></ProtectedRoute>} />
+                <Route path="/storico"      element={<ProtectedRoute ruoli={['titolare', 'responsabile']}><Storico /></ProtectedRoute>} />
+                <Route path="/impostazioni" element={<ProtectedRoute ruoli={['titolare']}><Impostazioni /></ProtectedRoute>} />
+              </Route>
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Routes>
+          </BrowserRouter>
+          </ToastProvider>
+        </OrdersProvider>
       </AuthProvider>
     </SettingsProvider>
   );

@@ -5,10 +5,11 @@ import StatCard from '@/components/cards/StatCard';
 import { tempoTrascorso, formatCurrency } from '@/utils';
 import { clsx } from 'clsx';
 import { useNavigate } from 'react-router-dom';
-import { getOrdini, getOrdineById, aggiornaStatoOrdine } from '@/api/ordini';
+import { getOrdineById, aggiornaStatoOrdine } from '@/api/ordini';
 import type { OrdineAPI, StatoOrdineAPI } from '@/api/ordini';
 import PrintPreview from '@/components/print/PrintPreview';
 import EditOrdine from '@/components/ordini/EditOrdine';
+import { useOrders } from '@/contexts/OrdersContext';
 
 const colonne: { stato: StatoOrdineAPI; label: string; color: string }[] = [
   { stato: 'ricevuto',        label: 'Ricevuti',        color: 'border-t-blue-500' },
@@ -27,34 +28,14 @@ const canaleIcon: Record<string, string> = { banco: '🪑', telefono: '📞', on
 
 export default function Ordini() {
   const navigate = useNavigate();
-  const [ordini, setOrdini] = useState<OrdineAPI[]>([]);
+  const { ordini, refreshOrdini, loading: refreshing } = useOrders();
   const [loadingIds, setLoadingIds] = useState<Set<number>>(new Set());
   const [error, setError] = useState<string | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
 
   // Modali
   const [ordineStampa, setOrdineStampa] = useState<OrdineAPI | null>(null);
   const [ordineModifica, setOrdineModifica] = useState<OrdineAPI | null>(null);
   const [colonnaAttiva, setColonnaAttiva] = useState<StatoOrdineAPI>('ricevuto');
-
-  const carica = useCallback(async (silent = false) => {
-    if (!silent) setRefreshing(true);
-    try {
-      const data = await getOrdini();
-      setOrdini(data);
-      setError(null);
-    } catch {
-      setError('Impossibile caricare gli ordini. Verifica la connessione al server.');
-    } finally {
-      setRefreshing(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    carica();
-    const interval = setInterval(() => carica(true), 30_000);
-    return () => clearInterval(interval);
-  }, [carica]);
 
   const avanzaStato = async (id: number) => {
     const ordine = ordini.find(o => o.id === id);
@@ -64,10 +45,10 @@ export default function Ordini() {
 
     setLoadingIds(prev => new Set(prev).add(id));
     try {
-      const aggiornato = await aggiornaStatoOrdine(id, next);
-      setOrdini(prev => prev.map(o => o.id === id ? { ...o, ...aggiornato } : o));
+      await aggiornaStatoOrdine(id, next);
+      await refreshOrdini();
     } catch {
-      await carica(true);
+      setError('Impossibile avanzare lo stato dell\'ordine. Riprova.');
     } finally {
       setLoadingIds(prev => { const s = new Set(prev); s.delete(id); return s; });
     }
@@ -110,7 +91,7 @@ export default function Ordini() {
         <h2 className="font-bold text-text-primary text-lg">Kanban ordini</h2>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => carica()}
+            onClick={() => refreshOrdini()}
             disabled={refreshing}
             className="btn-secondary text-xs py-1.5"
             title="Aggiorna"
@@ -250,8 +231,8 @@ export default function Ordini() {
         <EditOrdine
           ordine={ordineModifica}
           onClose={() => setOrdineModifica(null)}
-          onSaved={aggiornato => {
-            setOrdini(prev => prev.map(o => o.id === aggiornato.id ? { ...o, ...aggiornato } : o));
+          onSaved={() => {
+            refreshOrdini();
             setOrdineModifica(null);
           }}
         />

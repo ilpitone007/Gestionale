@@ -68,7 +68,7 @@ export default function Login() {
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
             <div>
-              <label className="label">Nome utente</label>
+              <label htmlFor="username" className="label">Nome utente</label>
               <input
                 id="username"
                 type="text"
@@ -82,7 +82,7 @@ export default function Login() {
               />
             </div>
             <div>
-              <label className="label">Password</label>
+              <label htmlFor="password" className="label">Password</label>
               <input
                 id="password"
                 type="password"
@@ -102,26 +102,28 @@ export default function Login() {
             </button>
           </form>
 
-          {/* Quick-login accounts */}
-          <div className="mt-8 p-4 bg-surface border border-border rounded-xl">
-            <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-3">Account demo</p>
-            <div className="grid grid-cols-3 gap-2">
-              {([
-                ['Titolare', 'titolare', 'titolare123'],
-                ['Responsabile', 'responsabile', 'responsabile123'],
-                ['Dipendente', 'dipendente', 'dipendente123'],
-              ] as [string, string, string][]).map(([ruolo, u, p]) => (
-                <button
-                  key={u}
-                  onClick={() => quickLogin(u, p)}
-                  className="text-left p-2.5 bg-bg rounded-lg hover:bg-border transition-colors"
-                >
-                  <div className="text-xs font-semibold text-text-primary">{ruolo}</div>
-                  <div className="text-xs text-text-muted">{u}</div>
-                </button>
-              ))}
+          {/* Quick-login accounts (only in development) */}
+          {import.meta.env.DEV && (
+            <div className="mt-8 p-4 bg-surface border border-border rounded-xl">
+              <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-3">Account demo</p>
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  ['Titolare', 'titolare', 'titolare123'],
+                  ['Responsabile', 'responsabile', 'responsabile123'],
+                  ['Dipendente', 'dipendente', 'dipendente123'],
+                ] as [string, string, string][]).map(([ruolo, u, p]) => (
+                  <button
+                    key={u}
+                    onClick={() => quickLogin(u, p)}
+                    className="text-left p-2.5 bg-bg rounded-lg hover:bg-border transition-colors"
+                  >
+                    <div className="text-xs font-semibold text-text-primary">{ruolo}</div>
+                    <div className="text-xs text-text-muted">{u}</div>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

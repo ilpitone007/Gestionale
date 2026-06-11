@@ -53,7 +53,7 @@ function Toggle({ value, onChange, label, desc }: { value: boolean; onChange: (v
 
 export default function Impostazioni() {
   const toast = useToast();
-  const { settings, updateSettings, resetSettings } = useSettings();
+  const { settings, updateSettings, saveSettings, resetSettings } = useSettings();
   const [sezione, setSezione] = useState('locale');
   const logoRef = useRef<HTMLInputElement>(null);
 
@@ -138,13 +138,71 @@ export default function Impostazioni() {
   const [nuovaPassword, setNuovaPassword] = useState('');
   const [mostraPass, setMostraPass] = useState(false);
 
-  const salva = () => toast.success('Impostazioni salvate!');
+  const [backendStatus, setBackendStatus] = useState('Verifica in corso...');
+  const [dbStatus, setDbStatus] = useState('Verifica in corso...');
 
-  const handleLogo = (e: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    const checkHealth = async () => {
+      try {
+        const res = await fetch('/api/health');
+        if (res.ok) {
+          const data = await res.json();
+          setBackendStatus('🟢 Online');
+          setDbStatus(data.database === 'connesso' ? '✅ Connesso' : '❌ Errore');
+        } else {
+          setBackendStatus('🔴 Offline');
+          setDbStatus('❌ Disconnesso');
+        }
+      } catch {
+        setBackendStatus('🔴 Offline');
+        setDbStatus('❌ Disconnesso');
+      }
+    };
+    checkHealth();
+    const interval = setInterval(checkHealth, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const salva = async () => {
+    try {
+      await saveSettings();
+      toast.success('Impostazioni salvate con successo sul server!');
+    } catch {
+      toast.error('Errore durante il salvataggio delle impostazioni.');
+    }
+  };
+
+  const handleLogo = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
     const reader = new FileReader();
-    reader.onload = ev => updateSettings({ logo: ev.target?.result as string });
+    reader.onload = async ev => {
+      const base64String = ev.target?.result as string;
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch('/api/uploads/logo', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json', 
+            'Authorization': `Bearer ${token}` 
+          },
+          body: JSON.stringify({ image: base64String }),
+        });
+
+        if (!res.ok) {
+          const d = await res.json();
+          toast.error(d.errore ?? 'Errore durante l\'upload del logo');
+          return;
+        }
+
+        const data = await res.json();
+        updateSettings({ logo: data.url });
+        toast.success('Logo caricato con successo sul server!');
+      } catch (err) {
+        toast.error('Errore di connessione durante l\'upload del logo');
+      }
+    };
     reader.readAsDataURL(file);
   };
 
@@ -161,7 +219,7 @@ export default function Impostazioni() {
     try {
       const res = await fetch('/api/auth/cambio-password', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('gestionale:token')}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
         body: JSON.stringify({ vecchia_password: vecchiaPassword, nuova_password: nuovaPassword }),
       });
       if (!res.ok) { const d = await res.json(); toast.error(d.errore ?? 'Errore'); return; }
@@ -661,8 +719,8 @@ export default function Impostazioni() {
             <div className="flex flex-col gap-0 text-sm">
               {[
                 { label: 'Versione app',        value: 'v1.0.0',   valueClass: 'font-mono text-xs bg-bg px-3 py-1 rounded-lg' },
-                { label: 'Connessione backend', value: '🟢 Online', valueClass: 'text-success font-semibold' },
-                { label: 'Database',            value: '✅ Connesso', valueClass: 'text-success font-semibold' },
+                { label: 'Connessione backend', value: backendStatus, valueClass: backendStatus.includes('Online') ? 'text-success font-semibold' : 'text-danger font-semibold' },
+                { label: 'Database',            value: dbStatus, valueClass: dbStatus.includes('Connesso') ? 'text-success font-semibold' : 'text-danger font-semibold' },
                 { label: 'Ultimo backup',       value: 'Oggi 03:00', valueClass: 'text-text-muted' },
               ].map(row => (
                 <div key={row.label} className="flex justify-between items-center py-3 border-b border-border">

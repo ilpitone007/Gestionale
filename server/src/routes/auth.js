@@ -29,7 +29,7 @@ router.post('/login', loginLimiter, async (req, res) => {
 
   try {
     // Trova l'utente nel database JSON
-    const utente = db.findOne('utenti', u => u.username === username.toLowerCase());
+    const utente = await db.findOne('utenti', u => u.username === username.toLowerCase());
 
     if (!utente || utente.attivo === 0) {
       return res.status(401).json({ errore: 'Credenziali non valide o utente disattivato.' });
@@ -65,8 +65,8 @@ router.post('/login', loginLimiter, async (req, res) => {
 });
 
 // GET /api/auth/me
-router.get('/me', authMiddleware, (req, res) => {
-  const utente = db.getById('utenti', req.utente.id);
+router.get('/me', authMiddleware, async (req, res) => {
+  const utente = await db.getById('utenti', req.utente.id);
   if (!utente) {
     return res.status(404).json({ errore: 'Utente non trovato.' });
   }

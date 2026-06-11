@@ -131,11 +131,29 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     setSettings(prev => ({ ...prev, ...partial }));
   }, []);
 
-  const saveSettings = useCallback(() => {
+  const saveSettings = useCallback(async () => {
+    let currentSettings: Settings | null = null;
     setSettings(prev => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(prev));
+      currentSettings = prev;
       return prev;
     });
+
+    const token = localStorage.getItem('token');
+    if (token && currentSettings) {
+      try {
+        await fetch('/api/impostazioni', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(currentSettings)
+        });
+      } catch (err) {
+        console.error('Errore nel salvataggio impostazioni sul server:', err);
+      }
+    }
   }, []);
 
   const resetSettings = useCallback(() => {
@@ -143,7 +161,27 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     setSettings(DEFAULT_SETTINGS);
   }, []);
 
-  // Auto-persist on change
+  // Carica impostazioni dal server all'avvio se loggato
+  useEffect(() => {
+    const caricaDalServer = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      try {
+        const res = await fetch('/api/impostazioni', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setSettings(prev => ({ ...prev, ...data }));
+        }
+      } catch (err) {
+        console.error('Errore nel caricamento impostazioni dal server:', err);
+      }
+    };
+    caricaDalServer();
+  }, []);
+
+  // Auto-persist on change in local cache
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
   }, [settings]);

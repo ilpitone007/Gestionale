@@ -34,7 +34,9 @@ const ottieniDateFiltro = (p: 'Settimana' | 'Mese' | 'Anno') => {
 
 export default function Report() {
   const [periodo, setPeriodo] = useState<typeof PERIODI[number]>('Settimana');
-  const [loading, setLoading] = useState(true);
+  const [loadingStatic, setLoadingStatic] = useState(true);
+  const [loadingPeriodo, setLoadingPeriodo] = useState(true);
+  const loading = loadingStatic || loadingPeriodo;
   const [incassiData, setIncassiData] = useState<AndamentoIncassi[]>([]);
   const [topProdottiData, setTopProdottiData] = useState<ClassificaProdotto[]>([]);
   const [margini, setMargini] = useState({
@@ -49,25 +51,18 @@ export default function Report() {
   const [numClienti, setNumClienti] = useState(0);
   const [trendMensileData, setTrendMensileData] = useState<{ mese: string; vendite: number }[]>([]);
 
+  // Caricamento dati statici (eseguito solo una volta al mount)
   useEffect(() => {
-    const caricaReport = async () => {
-      setLoading(true);
+    const caricaDatiStatici = async () => {
+      setLoadingStatic(true);
       try {
-        const { daData, aData } = ottieniDateFiltro(periodo);
-
         const [
-          incassi,
-          topProdotti,
-          marginiRes,
           confrontoRes,
           prodottiRes,
           categorieRes,
           clientiRes,
           tuttiIncassi,
         ] = await Promise.all([
-          getAndamentoIncassi(daData, aData),
-          getTopProdotti(daData, aData),
-          getMargini(daData, aData),
           getConfronto(),
           getProdotti(),
           getCategorie(),
@@ -75,9 +70,6 @@ export default function Report() {
           getAndamentoIncassi(), // storico completo per il trend mensile
         ]);
 
-        setIncassiData(incassi);
-        setTopProdottiData(topProdotti);
-        setMargini(marginiRes);
         setConfronto(confrontoRes);
         setProdotti(prodottiRes);
         setCategorie(categorieRes);
@@ -102,14 +94,42 @@ export default function Report() {
           .map(x => ({ mese: x.mese, vendite: x.vendite }))
           .slice(-6);
         setTrendMensileData(sortedTrend);
-
-      } catch {
-        // Fallback silenzioso
+      } catch (err) {
+        console.error('Errore nel caricamento dei dati statici del report:', err);
       } finally {
-        setLoading(false);
+        setLoadingStatic(false);
       }
     };
-    caricaReport();
+    caricaDatiStatici();
+  }, []);
+
+  // Caricamento dati temporali (eseguito al cambio periodo)
+  useEffect(() => {
+    const caricaDatiPeriodo = async () => {
+      setLoadingPeriodo(true);
+      try {
+        const { daData, aData } = ottieniDateFiltro(periodo);
+
+        const [
+          incassi,
+          topProdotti,
+          marginiRes,
+        ] = await Promise.all([
+          getAndamentoIncassi(daData, aData),
+          getTopProdotti(daData, aData),
+          getMargini(daData, aData),
+        ]);
+
+        setIncassiData(incassi);
+        setTopProdottiData(topProdotti);
+        setMargini(marginiRes);
+      } catch (err) {
+        console.error('Errore nel caricamento dei dati temporali del report:', err);
+      } finally {
+        setLoadingPeriodo(false);
+      }
+    };
+    caricaDatiPeriodo();
   }, [periodo]);
 
   // Formatta dati per grafico vendite giornaliere

@@ -23,9 +23,24 @@ export default function PrintPreview({ ordine, onClose }: PrintPreviewProps) {
 
   const handlePrint = () => {
     const printContents = receiptRef.current?.innerHTML ?? '';
-    const win = window.open('', '_blank', 'width=400,height=700');
-    if (!win) return;
-    win.document.write(`
+    let iframe = document.getElementById('print-iframe') as HTMLIFrameElement;
+    if (!iframe) {
+      iframe = document.createElement('iframe');
+      iframe.id = 'print-iframe';
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = '0';
+      document.body.appendChild(iframe);
+    }
+    
+    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!doc) return;
+    
+    doc.open();
+    doc.write(`
       <!DOCTYPE html>
       <html>
         <head>
@@ -42,12 +57,18 @@ export default function PrintPreview({ ordine, onClose }: PrintPreviewProps) {
             img { max-width: 80px; margin-bottom: 4px; }
           </style>
         </head>
-        <body onload="window.print(); window.close();">
+        <body>
           ${printContents}
+          <script>
+            window.onload = function() {
+              window.focus();
+              window.print();
+            }
+          </script>
         </body>
       </html>
     `);
-    win.document.close();
+    doc.close();
   };
 
   return (

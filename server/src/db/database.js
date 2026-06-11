@@ -1,5 +1,11 @@
 const fs = require('fs');
 const path = require('path');
+const { createClient } = require('@supabase/supabase-js');
+
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_KEY;
+const isSupabase = !!(supabaseUrl && supabaseKey);
+const supabase = isSupabase ? createClient(supabaseUrl, supabaseKey) : null;
 
 const dbPath = process.env.DB_PATH 
   ? path.resolve(process.env.DB_PATH) 
@@ -21,26 +27,31 @@ const schemaIniziale = {
   logs: []
 };
 
-// Carica il database da file o crea uno schema iniziale se non esiste
-let data = { ...schemaIniziale };
+// Carica il database da file o crea uno schema iniziale se non esiste (solo se non siamo su Supabase)
+let data = { ...schemaIniziale, impostazioni: {} };
 
-if (fs.existsSync(dbPath)) {
-  try {
-    const raw = fs.readFileSync(dbPath, 'utf8');
-    data = JSON.parse(raw);
-    
-    // Assicuriamoci che tutte le tabelle dello schema siano presenti
-    for (const key of Object.keys(schemaIniziale)) {
-      if (!data[key]) {
-        data[key] = [];
+if (!isSupabase) {
+  if (fs.existsSync(dbPath)) {
+    try {
+      const raw = fs.readFileSync(dbPath, 'utf8');
+      data = JSON.parse(raw);
+      
+      // Assicuriamoci che tutte le tabelle dello schema siano presenti
+      for (const key of Object.keys(schemaIniziale)) {
+        if (!data[key]) {
+          data[key] = [];
+        }
       }
+      if (!data.impostazioni) {
+        data.impostazioni = {};
+      }
+    } catch (err) {
+      console.error('Errore durante il caricamento del database JSON, creo un database vuoto:', err);
+      data = { ...schemaIniziale, impostazioni: {} };
     }
-  } catch (err) {
-    console.error('Errore durante il caricamento del database JSON, creo un database vuoto:', err);
-    data = { ...schemaIniziale };
+  } else {
+    salvaSuDiscoSync();
   }
-} else {
-  salvaSuDiscoSync();
 }
 
 // Coda di scrittura asincrona per evitare corruzione
@@ -48,10 +59,12 @@ let scritturaInCorso = false;
 let scritturaPianificata = false;
 
 function salvaSuDiscoSync() {
+  if (isSupabase) return;
   fs.writeFileSync(dbPath, JSON.stringify(data, null, 2), 'utf8');
 }
 
 function salvaSuDisco() {
+  if (isSupabase) return;
   if (scritturaInCorso) {
     scritturaPianificata = true;
     return;
@@ -74,95 +87,234 @@ function salvaSuDisco() {
 const db = {
   // Riferimento diretto ai dati (per operazioni flessibili)
   data,
+  isSupabase,
+  supabase,
+
+  async caricaImpostazioni() {
+    if (isSupabase) {
+      try {
+        const { data: row, error } = await supabase
+          .from('impostazioni')
+          .select('*')
+          .eq('chiave', 'config')
+          .maybeSingle();
+        if (error) {
+          console.error('Errore nel caricamento delle impostazioni da Supabase:', error);
+        }
+        if (row) {
+          this.data.impostazioni = JSON.parse(row.valore_json);
+        } else {
+          this.data.impostazioni = {};
+        }
+      } catch (err) {
+        console.error('Errore durante la connessione a Supabase per impostazioni:', err);
+        this.data.impostazioni = {};
+      }
+    }
+  },
+
+  async saveImpostazioni(impostazioni) {
+    this.data.impostazioni = impostazioni;
+    if (isSupabase) {
+      const { error } = await supabase
+        .from('impostazioni')
+        .upsert({
+          chiave: 'config',
+          valore_json: JSON.stringify(impostazioni)
+        });
+      if (error) throw error;
+    } else {
+      this.save();
+    }
+  },
 
   // Recupera tutti gli elementi di una tabella
-  getAll(tabella) {
-    return this.data[tabella] || [];
+  async getAll(tabella) {
+    if (isSupabase) {
+      let query = supabase.from(tabella).select('*');
+      if (tabella !== 'prodotto_ingredienti' && tabella !== 'impostazioni') {
+        query = query.order('id', { ascending: true });
+      }
+      const { data: rows, error } = await query;
+      if (error) throw error;
+      return rows || [];
+    } else {
+      return this.data[tabella] || [];
+    }
   },
 
   // Trova un elemento per ID
-  getById(tabella, id) {
-    return this.getAll(tabella).find(item => item.id === Number(id));
+  async getById(tabella, id) {
+    if (isSupabase) {
+      const { data: row, error } = await supabase
+        .from(tabella)
+        .select('*')
+        .eq('id', Number(id))
+        .maybeSingle();
+      if (error) throw error;
+      return row || null;
+    } else {
+      const items = await this.getAll(tabella);
+      return items.find(item => item.id === Number(id));
+    }
   },
 
   // Cerca elementi che corrispondono a un filtro
-  find(tabella, filtroFn) {
-    return this.getAll(tabella).filter(filtroFn);
+  async find(tabella, filtroFn) {
+    const list = await this.getAll(tabella);
+    return list.filter(filtroFn);
   },
 
   // Cerca un singolo elemento
-  findOne(tabella, filtroFn) {
-    return this.getAll(tabella).find(filtroFn);
+  async findOne(tabella, filtroFn) {
+    const list = await this.getAll(tabella);
+    return list.find(filtroFn);
   },
 
   // Inserisce un nuovo elemento con ID autoincrementale
-  insert(tabella, record) {
-    if (!this.data[tabella]) {
-      this.data[tabella] = [];
+  async insert(tabella, record) {
+    if (isSupabase) {
+      const cleaned = { ...record };
+      const { data: row, error } = await supabase
+        .from(tabella)
+        .insert(cleaned)
+        .select()
+        .single();
+      if (error) throw error;
+      return row;
+    } else {
+      if (!this.data[tabella]) {
+        this.data[tabella] = [];
+      }
+
+      const tabellaDati = this.data[tabella];
+      
+      // Calcola il prossimo ID
+      const maxId = tabellaDati.reduce((max, item) => (item.id > max ? item.id : max), 0);
+      const nuovoRecord = {
+        id: maxId + 1,
+        ...record
+      };
+
+      tabellaDati.push(nuovoRecord);
+      salvaSuDisco();
+      return nuovoRecord;
     }
-
-    const tabellaDati = this.data[tabella];
-    
-    // Calcola il prossimo ID
-    const maxId = tabellaDati.reduce((max, item) => (item.id > max ? item.id : max), 0);
-    const nuovoRecord = {
-      id: maxId + 1,
-      ...record
-    };
-
-    tabellaDati.push(nuovoRecord);
-    salvaSuDisco();
-    return nuovoRecord;
   },
 
   // Inserisce una relazione senza ID incrementale (chiave composta)
-  insertRelation(tabella, record) {
-    if (!this.data[tabella]) {
-      this.data[tabella] = [];
+  async insertRelation(tabella, record) {
+    if (isSupabase) {
+      const { data: rows, error } = await supabase
+        .from(tabella)
+        .insert(record)
+        .select();
+      if (error) throw error;
+      return rows[0] || record;
+    } else {
+      if (!this.data[tabella]) {
+        this.data[tabella] = [];
+      }
+      this.data[tabella].push(record);
+      salvaSuDisco();
+      return record;
     }
-    this.data[tabella].push(record);
-    salvaSuDisco();
-    return record;
   },
 
   // Aggiorna un elemento esistente per ID
-  update(tabella, id, campiAggiornati) {
-    const tabellaDati = this.data[tabella] || [];
-    const index = tabellaDati.findIndex(item => item.id === Number(id));
-    
-    if (index === -1) return null;
+  async update(tabella, id, campiAggiornati) {
+    if (isSupabase) {
+      const cleaned = { ...campiAggiornati };
+      delete cleaned.id;
+      const { data: row, error } = await supabase
+        .from(tabella)
+        .update(cleaned)
+        .eq('id', Number(id))
+        .select()
+        .single();
+      if (error) throw error;
+      return row;
+    } else {
+      const tabellaDati = this.data[tabella] || [];
+      const index = tabellaDati.findIndex(item => item.id === Number(id));
+      
+      if (index === -1) return null;
 
-    tabellaDati[index] = {
-      ...tabellaDati[index],
-      ...campiAggiornati,
-      id: Number(id) // Previene sovrascrittura dell'id
-    };
+      tabellaDati[index] = {
+        ...tabellaDati[index],
+        ...campiAggiornati,
+        id: Number(id) // Previene sovrascrittura dell'id
+      };
 
-    salvaSuDisco();
-    return tabellaDati[index];
+      salvaSuDisco();
+      return tabellaDati[index];
+    }
   },
 
   // Rimuove un elemento per ID
-  delete(tabella, id) {
-    const tabellaDati = this.data[tabella] || [];
-    const index = tabellaDati.findIndex(item => item.id === Number(id));
+  async delete(tabella, id) {
+    if (isSupabase) {
+      const { error } = await supabase
+        .from(tabella)
+        .delete()
+        .eq('id', Number(id));
+      if (error) throw error;
+      return true;
+    } else {
+      const tabellaDati = this.data[tabella] || [];
+      const index = tabellaDati.findIndex(item => item.id === Number(id));
 
-    if (index === -1) return false;
+      if (index === -1) return false;
 
-    tabellaDati.splice(index, 1);
-    salvaSuDisco();
-    return true;
+      tabellaDati.splice(index, 1);
+      salvaSuDisco();
+      return true;
+    }
+  },
+
+  // Rimuove elementi che soddisfano una condizione campo = valore
+  async deleteWhere(tabella, campo, valore) {
+    if (isSupabase) {
+      const { error } = await supabase
+        .from(tabella)
+        .delete()
+        .eq(campo, valore);
+      if (error) throw error;
+      return true;
+    } else {
+      if (this.data[tabella]) {
+        this.data[tabella] = this.data[tabella].filter(item => item[campo] !== valore);
+        salvaSuDisco();
+        return true;
+      }
+      return false;
+    }
   },
 
   // Pulisce una tabella (usato nel seeding)
-  clear(tabella) {
-    this.data[tabella] = [];
-    salvaSuDiscoSync();
+  async clear(tabella) {
+    if (isSupabase) {
+      let query = supabase.from(tabella).delete();
+      if (tabella === 'prodotto_ingredienti') {
+        query = query.neq('prodotto_id', -1);
+      } else if (tabella === 'impostazioni') {
+        query = query.neq('chiave', '');
+      } else {
+        query = query.neq('id', -1);
+      }
+      const { error } = await query;
+      if (error) throw error;
+    } else {
+      this.data[tabella] = [];
+      salvaSuDiscoSync();
+    }
   },
 
   // Salva esplicitamente lo stato corrente
   save() {
-    salvaSuDiscoSync();
+    if (!isSupabase) {
+      salvaSuDiscoSync();
+    }
   }
 };
 
