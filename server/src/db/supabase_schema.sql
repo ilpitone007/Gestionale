@@ -50,6 +50,7 @@ CREATE TABLE IF NOT EXISTS ingredienti (
 CREATE TABLE IF NOT EXISTS prodotto_ingredienti (
     prodotto_id INTEGER REFERENCES prodotti(id) ON DELETE CASCADE,
     ingrediente_id INTEGER REFERENCES ingredienti(id) ON DELETE CASCADE,
+    predefinito SMALLINT NOT NULL DEFAULT 1,
     PRIMARY KEY (prodotto_id, ingrediente_id)
 );
 
@@ -107,6 +108,7 @@ CREATE TABLE IF NOT EXISTS coupon (
     codice VARCHAR(50) UNIQUE NOT NULL,
     tipo VARCHAR(50) NOT NULL,
     valore NUMERIC(10, 2) NOT NULL,
+    prodotto_gratis_id INTEGER REFERENCES prodotti(id) ON DELETE SET NULL,
     valido_dal VARCHAR(20) NOT NULL,
     valido_al VARCHAR(20) NOT NULL,
     utilizzi_massimi INTEGER NOT NULL DEFAULT 100,
