@@ -30,7 +30,16 @@ const allowedOrigins = [
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development') {
+    
+    const matchesRender = origin.endsWith('.onrender.com');
+    const matchesFrontendUrl = process.env.FRONTEND_URL && origin === process.env.FRONTEND_URL;
+
+    if (
+      allowedOrigins.includes(origin) || 
+      process.env.NODE_ENV === 'development' ||
+      matchesRender ||
+      matchesFrontendUrl
+    ) {
       return callback(null, true);
     }
     return callback(new Error('CORS non consentito per questa origine'), false);
@@ -40,6 +49,7 @@ app.use(cors({
   exposedHeaders: ['X-Total-Count', 'X-Total-Pages'],
   credentials: true
 }));
+
 
 // Configurazione cartella di upload statico per loghi e immagini
 const dbPath = process.env.DB_PATH 
