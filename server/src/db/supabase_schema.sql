@@ -122,6 +122,7 @@ CREATE TABLE IF NOT EXISTS coupon_clienti (
     coupon_id INTEGER REFERENCES coupon(id) ON DELETE CASCADE,
     cliente_id INTEGER REFERENCES clienti(id) ON DELETE CASCADE,
     utilizzato SMALLINT DEFAULT 0,
+    assegnato_il VARCHAR(50),
     utilizzato_il VARCHAR(50)
 );
 
