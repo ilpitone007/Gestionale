@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Tag, Plus, Trash2, Users, UserPlus, Clock, RefreshCw } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
 import { formatCurrency } from '@/utils';
+import api from '@/api/client';
 
 interface Coupon {
   id: number;
@@ -49,12 +50,10 @@ export default function CouponManagement() {
 
   const caricaDati = useCallback(async () => {
     setLoading(true);
-    const token = localStorage.getItem('token');
     try {
-      const headers = { Authorization: `Bearer ${token}` };
       const [resCoupons, resClienti] = await Promise.all([
-        fetch('/api/coupon', { headers }).then(r => r.json()),
-        fetch('/api/clienti', { headers }).then(r => r.json()),
+        api.get('/coupon').then(r => r.data),
+        api.get('/clienti').then(r => r.data),
       ]);
 
       if (Array.isArray(resCoupons)) setCoupons(resCoupons);
@@ -77,58 +76,35 @@ export default function CouponManagement() {
       return;
     }
 
-    const token = localStorage.getItem('token');
     try {
-      const res = await fetch('/api/coupon', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          codice: codice.trim().toUpperCase(),
-          tipo,
-          valore: Number(valore),
-          valido_dal: validoDal,
-          valido_al: validoAl,
-          utilizzi_massimi: Number(utilizziMassimi),
-        }),
+      const res = await api.post('/coupon', {
+        codice: codice.trim().toUpperCase(),
+        tipo,
+        valore: Number(valore),
+        valido_dal: validoDal,
+        valido_al: validoAl,
+        utilizzi_massimi: Number(utilizziMassimi),
       });
 
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.errore || 'Errore nella creazione del coupon');
-        return;
-      }
-
       toast.success('Coupon creato con successo!');
-      setCoupons(prev => [...prev, data]);
+      setCoupons(prev => [...prev, res.data]);
       setCreazione(false);
       setCodice('');
-    } catch {
-      toast.error('Errore di connessione durante la creazione del coupon');
+    } catch (err: any) {
+      const msg = err.response?.data?.errore || 'Errore di connessione durante la creazione del coupon';
+      toast.error(msg);
     }
   };
 
   const handleDisattiva = async (id: number) => {
     if (!window.confirm('Sei sicuro di voler disattivare questo coupon?')) return;
-    const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`/api/coupon/${id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        toast.error(data.errore || 'Impossibile disattivare il coupon');
-        return;
-      }
-
+      await api.delete(`/coupon/${id}`);
       toast.success('Coupon disattivato correttamente');
       setCoupons(prev => prev.map(c => c.id === id ? { ...c, attivo: 0 } : c));
-    } catch {
-      toast.error('Errore di rete durante la disattivazione');
+    } catch (err: any) {
+      const msg = err.response?.data?.errore || 'Errore di rete durante la disattivazione';
+      toast.error(msg);
     }
   };
 
@@ -139,31 +115,18 @@ export default function CouponManagement() {
       return;
     }
 
-    const token = localStorage.getItem('token');
     try {
-      const res = await fetch('/api/coupon/assegna', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          coupon_id: selectedCouponId,
-          cliente_id: selectedClienteId === 'tutti' ? null : Number(selectedClienteId),
-          assegna_a_tutti: selectedClienteId === 'tutti',
-        }),
+      const res = await api.post('/coupon/assegna', {
+        coupon_id: selectedCouponId,
+        cliente_id: selectedClienteId === 'tutti' ? null : Number(selectedClienteId),
+        assegna_a_tutti: selectedClienteId === 'tutti',
       });
 
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.errore || 'Errore durante l\'assegnazione');
-        return;
-      }
-
-      toast.success(data.messaggio || 'Coupon assegnato correttamente!');
+      toast.success(res.data.messaggio || 'Coupon assegnato correttamente!');
       setAssegnazione(false);
-    } catch {
-      toast.error('Errore di connessione durante l\'assegnazione');
+    } catch (err: any) {
+      const msg = err.response?.data?.errore || 'Errore di connessione durante l\'assegnazione';
+      toast.error(msg);
     }
   };
 

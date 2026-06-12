@@ -3,6 +3,7 @@ import { ShoppingCart, Trash2, Plus, Minus, Receipt, User, StickyNote, RefreshCw
 import { formatCurrency } from '@/utils';
 import { clsx } from 'clsx';
 import { useToast } from '@/contexts/ToastContext';
+import api from '@/api/client';
 import { getProdotti } from '@/api/prodotti';
 import { getCategorie } from '@/api/categorie';
 import { creaOrdine } from '@/api/ordini';
@@ -57,25 +58,19 @@ export default function Cassa() {
       return;
     }
     setVerificandoCoupon(true);
-    const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`/api/coupon/verifica/${couponCodice.trim()}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.errore || 'Codice coupon non valido');
-        setCouponApplicato(null);
-        return;
-      }
+      const res = await api.get(`/coupon/verifica/${couponCodice.trim()}`);
+      const data = res.data;
       setCouponApplicato({
         codice: data.coupon.codice,
         valore: data.coupon.valore,
         tipo: data.coupon.tipo
       });
       toast.success(`Coupon ${data.coupon.codice} applicato!`);
-    } catch {
-      toast.error('Errore di connessione');
+    } catch (err: any) {
+      const msg = err.response?.data?.errore || 'Codice coupon non valido';
+      toast.error(msg);
+      setCouponApplicato(null);
     } finally {
       setVerificandoCoupon(false);
     }

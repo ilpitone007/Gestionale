@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/contexts/ToastContext';
 import { useSettings, GIORNI, DEFAULT_SETTINGS } from '@/contexts/SettingsContext';
+import api from '@/api/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { clsx } from 'clsx';
 import CouponManagement from '@/components/impostazioni/CouponManagement';
@@ -144,15 +145,9 @@ export default function Impostazioni() {
   useEffect(() => {
     const checkHealth = async () => {
       try {
-        const res = await fetch('/api/health');
-        if (res.ok) {
-          const data = await res.json();
-          setBackendStatus('🟢 Online');
-          setDbStatus(data.database === 'connesso' ? '✅ Connesso' : '❌ Errore');
-        } else {
-          setBackendStatus('🔴 Offline');
-          setDbStatus('❌ Disconnesso');
-        }
+        const res = await api.get('/health');
+        setBackendStatus('🟢 Online');
+        setDbStatus(res.data.database === 'connesso' ? '✅ Connesso' : '❌ Errore');
       } catch {
         setBackendStatus('🔴 Offline');
         setDbStatus('❌ Disconnesso');
@@ -180,27 +175,12 @@ export default function Impostazioni() {
     reader.onload = async ev => {
       const base64String = ev.target?.result as string;
       try {
-        const token = localStorage.getItem('token');
-        const res = await fetch('/api/uploads/logo', {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json', 
-            'Authorization': `Bearer ${token}` 
-          },
-          body: JSON.stringify({ image: base64String }),
-        });
-
-        if (!res.ok) {
-          const d = await res.json();
-          toast.error(d.errore ?? 'Errore durante l\'upload del logo');
-          return;
-        }
-
-        const data = await res.json();
-        updateSettings({ logo: data.url });
+        const res = await api.post('/uploads/logo', { image: base64String });
+        updateSettings({ logo: res.data.url });
         toast.success('Logo caricato con successo sul server!');
-      } catch (err) {
-        toast.error('Errore di connessione durante l\'upload del logo');
+      } catch (err: any) {
+        const msg = err.response?.data?.errore || 'Errore durante l\'upload del logo';
+        toast.error(msg);
       }
     };
     reader.readAsDataURL(file);
@@ -217,16 +197,15 @@ export default function Impostazioni() {
       toast.error('La nuova password deve essere di almeno 6 caratteri'); return;
     }
     try {
-      const res = await fetch('/api/auth/cambio-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
-        body: JSON.stringify({ vecchia_password: vecchiaPassword, nuova_password: nuovaPassword }),
+      await api.post('/auth/cambio-password', {
+        vecchia_password: vecchiaPassword,
+        nuova_password: nuovaPassword,
       });
-      if (!res.ok) { const d = await res.json(); toast.error(d.errore ?? 'Errore'); return; }
       toast.success('Password aggiornata!');
       setVecchiaPassword(''); setNuovaPassword('');
-    } catch {
-      toast.error('Errore di connessione');
+    } catch (err: any) {
+      const msg = err.response?.data?.errore || 'Errore durante il cambio password';
+      toast.error(msg);
     }
   };
 

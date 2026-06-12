@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import api from '@/api/client';
 
 export interface Settings {
   // 🏪 Locale
@@ -142,14 +143,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     const token = localStorage.getItem('token');
     if (token && currentSettings) {
       try {
-        await fetch('/api/impostazioni', {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify(currentSettings)
-        });
+        await api.put('/impostazioni', currentSettings);
       } catch (err) {
         console.error('Errore nel salvataggio impostazioni sul server:', err);
       }
@@ -167,13 +161,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       const token = localStorage.getItem('token');
       if (!token) return;
       try {
-        const res = await fetch('/api/impostazioni', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setSettings(prev => ({ ...prev, ...data }));
-        }
+        const res = await api.get('/impostazioni');
+        setSettings(prev => ({ ...prev, ...res.data }));
       } catch (err) {
         console.error('Errore nel caricamento impostazioni dal server:', err);
       }
