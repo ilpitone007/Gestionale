@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.VITE_API_URL || '/api',
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -25,7 +25,8 @@ api.interceptors.response.use(
     } else {
       // Logga l'errore del client sul server (fire-and-forget)
       if (error.config && !error.config.url.includes('/logs')) {
-        axios.post('/api/logs', {
+        const logBaseUrl = import.meta.env.VITE_API_URL || '/api';
+        axios.post(`${logBaseUrl}/logs`, {
           messaggio: error.response?.data?.errore || error.message || 'Errore API',
           stack: error.stack || null,
           tipo: 'API_ERROR',
