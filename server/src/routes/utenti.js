@@ -34,7 +34,7 @@ router.post('/', async (req, res) => {
 
   try {
     // Verifica se l'username esiste già
-    const usernameEsistente = await db.findOne('utenti', u => u.username === username.toLowerCase());
+    const usernameEsistente = await db.findOne('utenti', { username: username.toLowerCase() });
     if (usernameEsistente) {
       return res.status(400).json({ errore: 'Questo username è già registrato.' });
     }
@@ -108,7 +108,7 @@ router.delete('/:id', async (req, res) => {
 
     // Per sicurezza, se è l'ultimo titolare, impediamo di eliminarlo
     if (utente.ruolo === 'titolare') {
-      const titolari = await db.find('utenti', u => u.ruolo === 'titolare' && u.attivo === 1);
+      const titolari = await db.find('utenti', { ruolo: 'titolare', attivo: 1 });
       if (titolari.length <= 1) {
         return res.status(400).json({ errore: 'Impossibile disattivare l\'unico titolare attivo.' });
       }

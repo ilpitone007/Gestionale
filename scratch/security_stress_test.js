@@ -28,6 +28,21 @@ async function runSecurityTests() {
     console.error('Impossibile ottenere token dipendente per i test:', e.message);
   }
 
+  // Recuperiamo un elenco dinamico dei prodotti per usare gli ID corretti nei test successivi
+  let idProdottoValido = 1;
+  try {
+    const resProdotti = await fetch(`${API_URL}/prodotti`, {
+      headers: { 'Authorization': `Bearer ${tokenDipendente}` }
+    });
+    const listaProdotti = await resProdotti.json();
+    if (listaProdotti && listaProdotti.length > 0) {
+      idProdottoValido = listaProdotti[0].id;
+      console.log(`   [Info] Rilevato ID dinamico prodotto per i test di sicurezza: id=${idProdottoValido}`);
+    }
+  } catch (err) {
+    console.log('   ⚠️ Attenzione: Impossibile recuperare gli ID dei prodotti dal server, uso il default (1).');
+  }
+
   // ----------------------------------------------------
   // 1. Test Validazione Tipi su Login
   // ----------------------------------------------------
@@ -141,7 +156,7 @@ async function runSecurityTests() {
       body: JSON.stringify({
         canale: 'banco',
         metodo_pagamento: 'contanti',
-        righe: [{ prodotto_id: 1, quantita: 0 }]
+        righe: [{ prodotto_id: idProdottoValido, quantita: 0 }]
       })
     });
 
@@ -155,7 +170,7 @@ async function runSecurityTests() {
       body: JSON.stringify({
         canale: 'banco',
         metodo_pagamento: 'contanti',
-        righe: [{ prodotto_id: 1, quantita: 150 }]
+        righe: [{ prodotto_id: idProdottoValido, quantita: 150 }]
       })
     });
 
@@ -187,7 +202,7 @@ async function runSecurityTests() {
         canale: 'banco',
         metodo_pagamento: 'contanti',
         sconto: -10, // Sconto negativo
-        righe: [{ prodotto_id: 1, quantita: 2 }]
+        righe: [{ prodotto_id: idProdottoValido, quantita: 2 }]
       })
     });
 
@@ -219,7 +234,7 @@ async function runSecurityTests() {
       body: JSON.stringify({
         canale: 'banco',
         metodo_pagamento: 'contanti',
-        righe: [{ prodotto_id: 1, quantita: 1 }]
+        righe: [{ prodotto_id: idProdottoValido, quantita: 1 }]
       })
     });
     const ordine = await resCrea.json();
@@ -251,7 +266,7 @@ async function runSecurityTests() {
         'Authorization': `Bearer ${tokenDipendente}`
       },
       body: JSON.stringify({
-        righe: [{ prodotto_id: 1, quantita: 5 }],
+        righe: [{ prodotto_id: idProdottoValido, quantita: 5 }],
         nota: 'Hackerato'
       })
     });

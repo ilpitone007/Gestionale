@@ -63,6 +63,23 @@ async function runTests() {
     return;
   }
 
+  // Recuperiamo un elenco dinamico dei prodotti per usare gli ID corretti nei test successivi
+  let idMargherita = 1;
+  let idMarinara = 2;
+  try {
+    const resProdotti = await fetch(`${API_URL}/prodotti`, {
+      headers: { 'Authorization': `Bearer ${tokenDipendente}` }
+    });
+    const listaProdotti = await resProdotti.json();
+    const margherita = listaProdotti.find(p => p.nome.toLowerCase() === 'margherita') || listaProdotti[0];
+    const marinara = listaProdotti.find(p => p.nome.toLowerCase() === 'marinara') || listaProdotti[1];
+    if (margherita) idMargherita = margherita.id;
+    if (marinara) idMarinara = marinara.id;
+    console.log(`   [Info] Rilevati ID dinamici prodotti per i test: Margherita=${idMargherita}, Marinara=${idMarinara}`);
+  } catch (err) {
+    console.log('   ⚠️ Attenzione: Impossibile recuperare gli ID dei prodotti dal server, uso i default (1, 2).');
+  }
+
   // ----------------------------------------------------
   // 2. TEST DI VULNERABILITÀ & RUOLI (SECURITY)
   // ----------------------------------------------------
@@ -180,8 +197,8 @@ async function runTests() {
         telefono_banco: '3209876543',
         coupon_codice: couponCode,
         righe: [
-          { prodotto_id: 1, quantita: 2 }, // 2 Margherita (6.00€ * 2 = 12.00€)
-          { prodotto_id: 2, quantita: 1 }  // 1 Marinara (5.00€)
+          { prodotto_id: idMargherita, quantita: 2 },
+          { prodotto_id: idMarinara, quantita: 1 }
         ] // Subtotale = 17.00€, Sconto 20% (3.40€), Totale = 13.60€
       })
     });

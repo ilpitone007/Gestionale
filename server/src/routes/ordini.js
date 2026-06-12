@@ -78,7 +78,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
     }
 
     // Recupera le righe associate a questo ordine
-    const righe = await db.find('righe_ordine', ro => ro.ordine_id === Number(id));
+    const righe = await db.find('righe_ordine', { ordine_id: Number(id) });
     const prodotti = await db.getAll('prodotti');
 
     const righeArricchite = righe.map(r => {
@@ -149,7 +149,7 @@ router.post('/', authMiddleware, async (req, res) => {
 
   try {
     // Genera numero ordine
-    const numero_ordine = generaNumeroOrdine();
+    const numero_ordine = await generaNumeroOrdine();
     let totale = 0;
     const dataCreazione = new Date().toISOString().replace('T', ' ').substring(0, 19);
 
@@ -237,7 +237,7 @@ router.post('/', authMiddleware, async (req, res) => {
     }
 
     if (coupon_codice) {
-      const cp = await db.findOne('coupon', c => c.codice.toUpperCase() === coupon_codice.toUpperCase() && c.attivo === 1);
+      const cp = await db.findOne('coupon', { codice: coupon_codice.toUpperCase(), attivo: 1 });
       if (cp) {
         const oggi = new Date().toISOString().split('T')[0];
         if (oggi >= cp.valido_dal && oggi <= cp.valido_al && cp.utilizzi_correnti < cp.utilizzi_massimi) {
@@ -345,7 +345,7 @@ router.post('/', authMiddleware, async (req, res) => {
 
       // Se era un coupon assegnato al cliente, lo segna come utilizzato
       if (cliente_id) {
-        const associazione = await db.findOne('coupon_clienti', cc => cc.coupon_id === couponUsato.id && cc.cliente_id === cliente.id && cc.utilizzato === 0);
+        const associazione = await db.findOne('coupon_clienti', { coupon_id: couponUsato.id, cliente_id: cliente.id, utilizzato: 0 });
         if (associazione) {
           await db.update('coupon_clienti', associazione.id, {
             utilizzato: 1,
@@ -424,7 +424,7 @@ router.put('/:id/stato', authMiddleware, async (req, res) => {
           const puntiGuadagnati = calcolaPuntiOrdine(ordine.totale);
 
           // Calcola le pizze ordinate per la carta fedeltà
-          const righe = await db.find('righe_ordine', ro => ro.ordine_id === ordine.id);
+          const righe = await db.find('righe_ordine', { ordine_id: ordine.id });
           const pizzeOrdinate = contaPizzeNelleRighe(righe);
 
           // Aggiorna il profilo del cliente
@@ -571,7 +571,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
     const totaleNetto = Math.max(0, totale - scontoApplicato);
 
     // Elimina le vecchie righe
-    const vecchieRighe = await db.find('righe_ordine', r => r.ordine_id === Number(id));
+    const vecchieRighe = await db.find('righe_ordine', { ordine_id: Number(id) });
     for (const r of vecchieRighe) {
       await db.delete('righe_ordine', r.id);
     }
@@ -592,7 +592,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
       telefono_banco: telefono_banco !== undefined ? (telefono_banco ? telefono_banco.trim() : null) : ordine.telefono_banco,
     });
 
-    const nuoveRighe = await db.find('righe_ordine', r => r.ordine_id === Number(id));
+    const nuoveRighe = await db.find('righe_ordine', { ordine_id: Number(id) });
     const righeArricchite = nuoveRighe.map(r => ({
       ...r,
       prodotto: prodotti.find(p => p.id === r.prodotto_id)

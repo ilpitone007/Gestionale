@@ -21,7 +21,7 @@ router.get('/verifica/:codice', authMiddleware, async (req, res) => {
   const { cliente_id } = req.query; // Opzionale, per verificare se è un coupon assegnato al cliente
 
   try {
-    const coupon = await db.findOne('coupon', c => c.codice.toUpperCase() === codice.toUpperCase());
+    const coupon = await db.findOne('coupon', { codice: codice.toUpperCase() });
 
     if (!coupon || coupon.attivo === 0) {
       return res.status(404).json({ errore: 'Codice coupon non valido o inesistente.' });
@@ -40,9 +40,7 @@ router.get('/verifica/:codice', authMiddleware, async (req, res) => {
 
     // Se è specificato un cliente_id, controlliamo se il coupon è personale
     if (cliente_id) {
-      const associazione = await db.findOne('coupon_clienti', cc => {
-        return cc.coupon_id === coupon.id && cc.cliente_id === Number(cliente_id);
-      });
+      const associazione = await db.findOne('coupon_clienti', { coupon_id: coupon.id, cliente_id: Number(cliente_id) });
 
       // Se l'associazione esiste ma è già utilizzato
       if (associazione && associazione.utilizzato === 1) {
@@ -75,7 +73,7 @@ router.post('/', authMiddleware, permettiRuoli('titolare', 'responsabile'), asyn
   }
 
   try {
-    const codiceEsistente = await db.findOne('coupon', c => c.codice.toUpperCase() === codice.toUpperCase());
+    const codiceEsistente = await db.findOne('coupon', { codice: codice.toUpperCase() });
     if (codiceEsistente) {
       return res.status(400).json({ errore: 'Questo codice coupon esiste già.' });
     }
@@ -117,7 +115,7 @@ router.post('/assegna', authMiddleware, permettiRuoli('titolare', 'responsabile'
       const clienti = await db.getAll('clienti');
       for (const c of clienti) {
         // Verifica se già assegnato e non utilizzato
-        const giaAssegnato = await db.findOne('coupon_clienti', cc => cc.coupon_id === coupon.id && cc.cliente_id === c.id);
+        const giaAssegnato = await db.findOne('coupon_clienti', { coupon_id: coupon.id, cliente_id: c.id });
         if (!giaAssegnato) {
           await db.insert('coupon_clienti', {
             coupon_id: coupon.id,
@@ -140,7 +138,7 @@ router.post('/assegna', authMiddleware, permettiRuoli('titolare', 'responsabile'
     }
 
     // Verifica se già assegnato
-    const giaAssegnato = await db.findOne('coupon_clienti', cc => cc.coupon_id === coupon.id && cc.cliente_id === Number(cliente_id));
+    const giaAssegnato = await db.findOne('coupon_clienti', { coupon_id: coupon.id, cliente_id: Number(cliente_id) });
     if (giaAssegnato) {
       return res.status(400).json({ errore: 'Questo coupon è già stato assegnato a questo cliente (attivo o già utilizzato).' });
     }

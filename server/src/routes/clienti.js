@@ -44,11 +44,11 @@ router.get('/:id', authMiddleware, async (req, res) => {
     }
 
     // Recupera lo storico punti
-    const storicoPunti = (await db.find('storico_punti', sp => sp.cliente_id === Number(id)))
+    const storicoPunti = (await db.find('storico_punti', { cliente_id: Number(id) }))
       .sort((a, b) => new Date(b.data) - new Date(a.data));
 
     // Recupera i coupon assegnati e non ancora utilizzati
-    const couponClienti = await db.find('coupon_clienti', cc => cc.cliente_id === Number(id) && cc.utilizzato === 0);
+    const couponClienti = await db.find('coupon_clienti', { cliente_id: Number(id), utilizzato: 0 });
     const couponDati = await db.getAll('coupon');
     
     const couponAttivi = couponClienti.map(cc => {
@@ -70,7 +70,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
     }).filter(Boolean);
 
     // Recupera gli ordini storici del cliente
-    const ordini = (await db.find('ordini', o => o.cliente_id === Number(id)))
+    const ordini = (await db.find('ordini', { cliente_id: Number(id) }))
       .sort((a, b) => new Date(b.creato_il) - new Date(a.creato_il));
 
     res.json({
@@ -95,7 +95,7 @@ router.post('/', authMiddleware, async (req, res) => {
 
   try {
     // Verifica se il numero di telefono è già registrato
-    const telefonoEsistente = await db.findOne('clienti', c => c.telefono === telefono);
+    const telefonoEsistente = await db.findOne('clienti', { telefono });
     if (telefonoEsistente) {
       return res.status(400).json({ errore: 'Questo numero di telefono è già associato a un cliente.' });
     }
@@ -132,8 +132,8 @@ router.put('/:id', authMiddleware, async (req, res) => {
 
     // Se cambia il telefono, verifica che non appartenga a un altro cliente
     if (telefono && telefono !== cliente.telefono) {
-      const telefonoEsistente = await db.findOne('clienti', c => c.telefono === telefono && c.id !== Number(id));
-      if (telefonoEsistente) {
+      const telefonoEsistente = await db.findOne('clienti', { telefono });
+      if (telefonoEsistente && telefonoEsistente.id !== Number(id)) {
         return res.status(400).json({ errore: 'Il numero di telefono è già in uso da un altro cliente.' });
       }
     }
@@ -184,7 +184,7 @@ router.delete('/:id', authMiddleware, permettiRuoli('titolare', 'responsabile'),
     await db.deleteWhere('coupon_clienti', 'cliente_id', Number(id));
 
     // Rimuove il riferimento al cliente dagli ordini (imposta cliente_id a null per mantenere l'ordine nello storico)
-    const ordiniCliente = await db.find('ordini', o => o.cliente_id === Number(id));
+    const ordiniCliente = await db.find('ordini', { cliente_id: Number(id) });
     for (const o of ordiniCliente) {
       await db.update('ordini', o.id, { cliente_id: null });
     }

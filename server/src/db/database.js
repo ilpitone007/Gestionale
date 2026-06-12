@@ -7,6 +7,18 @@ const supabaseKey = process.env.SUPABASE_KEY;
 const isSupabase = !!(supabaseUrl && supabaseKey);
 const supabase = isSupabase ? createClient(supabaseUrl, supabaseKey) : null;
 
+// Caching in memoria per velocizzare le tabelle statiche del menu
+const cache = {};
+const cacheableTables = ['categorie', 'prodotti', 'ingredienti', 'prodotto_ingredienti'];
+
+function invalidateCache(tabella) {
+  if (cacheableTables.includes(tabella)) {
+    delete cache[tabella];
+    console.log(`[Cache] Invalidata cache in memoria per la tabella: ${tabella}`);
+  }
+}
+
+
 const dbPath = process.env.DB_PATH 
   ? path.resolve(process.env.DB_PATH) 
   : path.resolve(__dirname, 'pizzeria_db.json');
@@ -131,6 +143,20 @@ const db = {
   // Recupera tutti gli elementi di una tabella
   async getAll(tabella) {
     if (isSupabase) {
+      if (cacheableTables.includes(tabella)) {
+        if (cache[tabella]) {
+          return cache[tabella];
+        }
+        let query = supabase.from(tabella).select('*');
+        if (tabella !== 'prodotto_ingredienti' && tabella !== 'impostazioni') {
+          query = query.order('id', { ascending: true });
+        }
+        const { data: rows, error } = await query;
+        if (error) throw error;
+        cache[tabella] = rows || [];
+        return cache[tabella];
+      }
+      
       let query = supabase.from(tabella).select('*');
       if (tabella !== 'prodotto_ingredienti' && tabella !== 'impostazioni') {
         query = query.order('id', { ascending: true });
@@ -146,6 +172,10 @@ const db = {
   // Trova un elemento per ID
   async getById(tabella, id) {
     if (isSupabase) {
+      if (cacheableTables.includes(tabella)) {
+        const list = await this.getAll(tabella);
+        return list.find(item => item.id === Number(id)) || null;
+      }
       const { data: row, error } = await supabase
         .from(tabella)
         .select('*')
@@ -155,24 +185,72 @@ const db = {
       return row || null;
     } else {
       const items = await this.getAll(tabella);
-      return items.find(item => item.id === Number(id));
+      return items.find(item => item.id === Number(id)) || null;
     }
   },
 
   // Cerca elementi che corrispondono a un filtro
-  async find(tabella, filtroFn) {
-    const list = await this.getAll(tabella);
-    return list.filter(filtroFn);
+  async find(tabella, queryObj) {
+    if (isSupabase) {
+      if (typeof queryObj === 'function') {
+        const list = await this.getAll(tabella);
+        return list.filter(queryObj);
+      } else if (typeof queryObj === 'object' && queryObj !== null) {
+        let query = supabase.from(tabella).select('*');
+        for (const [key, val] of Object.entries(queryObj)) {
+          query = query.eq(key, val);
+        }
+        if (tabella !== 'prodotto_ingredienti' && tabella !== 'impostazioni') {
+          query = query.order('id', { ascending: true });
+        }
+        const { data: rows, error } = await query;
+        if (error) throw error;
+        return rows || [];
+      }
+    } else {
+      const list = await this.getAll(tabella);
+      if (typeof queryObj === 'function') {
+        return list.filter(queryObj);
+      } else if (typeof queryObj === 'object' && queryObj !== null) {
+        return list.filter(item => {
+          return Object.entries(queryObj).every(([key, val]) => item[key] === val);
+        });
+      }
+    }
+    return [];
   },
 
   // Cerca un singolo elemento
-  async findOne(tabella, filtroFn) {
-    const list = await this.getAll(tabella);
-    return list.find(filtroFn);
+  async findOne(tabella, queryObj) {
+    if (isSupabase) {
+      if (typeof queryObj === 'function') {
+        const list = await this.getAll(tabella);
+        return list.find(queryObj);
+      } else if (typeof queryObj === 'object' && queryObj !== null) {
+        let query = supabase.from(tabella).select('*');
+        for (const [key, val] of Object.entries(queryObj)) {
+          query = query.eq(key, val);
+        }
+        const { data: row, error } = await query.maybeSingle();
+        if (error) throw error;
+        return row || null;
+      }
+    } else {
+      const list = await this.getAll(tabella);
+      if (typeof queryObj === 'function') {
+        return list.find(queryObj);
+      } else if (typeof queryObj === 'object' && queryObj !== null) {
+        return list.find(item => {
+          return Object.entries(queryObj).every(([key, val]) => item[key] === val);
+        });
+      }
+    }
+    return null;
   },
 
   // Inserisce un nuovo elemento con ID autoincrementale
   async insert(tabella, record) {
+    invalidateCache(tabella);
     if (isSupabase) {
       const cleaned = { ...record };
       const { data: row, error } = await supabase
@@ -204,6 +282,7 @@ const db = {
 
   // Inserisce una relazione senza ID incrementale (chiave composta)
   async insertRelation(tabella, record) {
+    invalidateCache(tabella);
     if (isSupabase) {
       const { data: rows, error } = await supabase
         .from(tabella)
@@ -223,6 +302,7 @@ const db = {
 
   // Aggiorna un elemento esistente per ID
   async update(tabella, id, campiAggiornati) {
+    invalidateCache(tabella);
     if (isSupabase) {
       const cleaned = { ...campiAggiornati };
       delete cleaned.id;
@@ -253,6 +333,7 @@ const db = {
 
   // Rimuove un elemento per ID
   async delete(tabella, id) {
+    invalidateCache(tabella);
     if (isSupabase) {
       const { error } = await supabase
         .from(tabella)
@@ -274,6 +355,7 @@ const db = {
 
   // Rimuove elementi che soddisfano una condizione campo = valore
   async deleteWhere(tabella, campo, valore) {
+    invalidateCache(tabella);
     if (isSupabase) {
       const { error } = await supabase
         .from(tabella)
@@ -293,6 +375,7 @@ const db = {
 
   // Pulisce una tabella (usato nel seeding)
   async clear(tabella) {
+    invalidateCache(tabella);
     if (isSupabase) {
       let query = supabase.from(tabella).delete();
       if (tabella === 'prodotto_ingredienti') {

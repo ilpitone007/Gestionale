@@ -1,6 +1,6 @@
 const db = require('../db/database');
 
-function generaNumeroOrdine() {
+async function generaNumeroOrdine() {
   const oggi = new Date();
   const yyyy = oggi.getFullYear();
   const mm = String(oggi.getMonth() + 1).padStart(2, '0');
@@ -9,7 +9,21 @@ function generaNumeroOrdine() {
 
   // Trova tutti gli ordini creati oggi
   const prefisso = `ORD-${dataString}-`;
-  const ordiniOggi = db.find('ordini', ord => ord.numero_ordine.startsWith(prefisso));
+  let ordiniOggi = [];
+
+  if (db.isSupabase) {
+    const { data, error } = await db.supabase
+      .from('ordini')
+      .select('numero_ordine')
+      .like('numero_ordine', `${prefisso}%`);
+    if (error) {
+      console.error('Errore nel recupero dei numeri d\'ordine da Supabase:', error);
+    } else {
+      ordiniOggi = data || [];
+    }
+  } else {
+    ordiniOggi = await db.find('ordini', ord => ord.numero_ordine.startsWith(prefisso));
+  }
 
   // Determina il prossimo numero progressivo
   let progressivo = 1;

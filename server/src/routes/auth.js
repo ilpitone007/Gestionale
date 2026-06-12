@@ -28,8 +28,8 @@ router.post('/login', loginLimiter, async (req, res) => {
   }
 
   try {
-    // Trova l'utente nel database JSON
-    const utente = await db.findOne('utenti', u => u.username === username.toLowerCase());
+    // Trova l'utente nel database
+    const utente = await db.findOne('utenti', { username: username.toLowerCase() });
 
     if (!utente || utente.attivo === 0) {
       return res.status(401).json({ errore: 'Credenziali non valide o utente disattivato.' });
